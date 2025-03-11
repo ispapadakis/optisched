@@ -1,0 +1,71 @@
+account_id,region,account_city,latitude,longitude,priority,service_time
+CID-001,Attiki,Tavros,37.9667,23.695,7,3
+CID-002,Attiki,Vari,37.841,23.813,1,3
+CID-003,Attiki,Agios Ioannis Rentis,37.9667,23.6667,4,3
+CID-004,Attiki,Paiania,37.96,23.85,3,3
+CID-005,Attiki,Nea Makri,38.0833,23.9833,9,3
+CID-006,Attiki,Elliniko,37.897,23.756,9,3
+CID-007,Attiki,Nea Erythraia,38.109,23.821,2,3
+CID-008,Attiki,Koropi,37.9,23.8733,7,3
+CID-009,Attiki,Pefki,38.0667,23.8,8,3
+CID-010,Attiki,Artemida,37.9667,24,6,3
+CID-011,Attiki,Elefsina,38.0333,23.5333,4,3
+CID-012,Attiki,Nea Filadelfeia,38.0367,23.7367,2,3
+CID-013,Attiki,Salamina,37.9667,23.5,4,3
+CID-014,Attiki,Perama,37.997,23.587,2,3
+CID-015,Attiki,Moschato,37.95,23.6667,4,3
+CID-016,Attiki,Kaisariani,37.9683,23.7583,5,3
+CID-017,Attiki,Agioi Anargyroi,38.0267,23.7183,2,3
+CID-018,Attiki,Alimos,37.9167,23.767,9,3
+CID-019,Attiki,Chaïdari,38.0167,23.65,3,3
+CID-020,Attiki,Kifisia,38.0833,23.8167,8,3
+CID-021,Attiki,Irakleio,38.05,23.7667,2,3
+CID-022,Attiki,Petroupoli,38.0333,23.6833,6,3
+CID-023,Attiki,Vyronas,37.9617,23.7533,10,3
+CID-024,Attiki,Galatsi,38.0167,23.75,6,3
+CID-025,Attiki,Agia Paraskevi,38.0117,23.82,4,3
+CID-026,Attiki,Korydallos,37.9833,23.65,8,3
+CID-027,Attiki,Palaio Faliro,37.9333,23.7,1,3
+CID-028,Attiki,Nea Ionia,38.0333,23.75,3,3
+CID-029,Attiki,Aigaleo,37.992,23.678,2,3
+CID-030,Attiki,Zografos,37.9783,23.7717,6,3
+CID-031,Attiki,Agios Dimitrios,37.9333,23.7333,10,3
+CID-032,Attiki,Marousi,38.05,23.8,2,3
+CID-033,Attiki,Nea Smyrni,37.95,23.7167,9,3
+CID-034,Attiki,Keratsini,37.987,23.6167,4,3
+CID-035,Attiki,Chalandri,38.0167,23.8,5,3
+CID-036,Attiki,Ilioupoli,37.9333,23.75,8,3
+CID-037,Attiki,Ilion,38.0333,23.7,10,3
+CID-038,Attiki,Nikaia,37.9667,23.6333,9,3
+CID-039,Attiki,Glyfada,37.876,23.758,10,3
+CID-040,Attiki,Kallithea,37.95,23.7,4,3
+CID-041,Attiki,Acharnes,38.0833,23.7333,4,3
+CID-042,Attiki,Peristeri,38.0167,23.6833,10,3
+CID-043,Attiki,Piraeus,37.953,23.6469,3,3
+CID-044,Attiki,Agios Stefanos,38.1408,23.8591,4,3
+CID-045,Attiki,Markopoulo,37.8833,23.9333,3,3
+CID-046,Dytiki Ellada,Pyrgos,37.6667,21.4333,9,3
+CID-047,Dytiki Ellada,Amaliada,37.8,21.35,10,3
+CID-049,Dytiki Makedonia,Kastoria,40.5167,21.2667,4,3
+CID-050,Dytiki Makedonia,Florina,40.7833,21.4,9,3
+CID-051,Dytiki Makedonia,Ptolemaida,40.5167,21.6833,7,3
+CID-052,Dytiki Makedonia,Kozani,40.3,21.7833,2,3
+CID-053,Kentriki Makedonia,Efkarpia,40.6833,22.95,7,3
+CID-054,Kentriki Makedonia,Alexandreia,40.6333,22.45,7,3
+CID-055,Kentriki Makedonia,Thermi,40.55,23.0167,9,3
+CID-056,Kentriki Makedonia,Peraia,40.5,22.925,8,3
+CID-057,Kentriki Makedonia,Panorama,40.5833,23.0333,8,3
+CID-058,Kentriki Makedonia,Edessa,40.8,22.05,9,3
+CID-059,Kentriki Makedonia,Giannitsa,40.7833,22.4,9,3
+CID-060,Kentriki Makedonia,Stavroupoli,40.6667,22.9333,7,3
+CID-061,Kentriki Makedonia,Evosmos,40.6689,22.9083,8,3
+CID-062,Kentriki Makedonia,Kalamaria,40.5833,22.95,6,3
+CID-063,Peloponnisos,Sparti,37.0739,22.4294,6,3
+CID-064,Peloponnisos,Tripoli,37.5167,22.3833,7,3
+CID-065,Peloponnisos,Korinthos,37.9386,22.9272,4,3
+CID-066,Peloponnisos,Kalamata,37.0378,22.1111,6,3
+CID-067,Peloponnisos,Zevgolatio,38.0815,22.6193,9,3
+CID-068,Sterea Ellada,Lamia,38.9,22.4333,3,3
+CID-069,Sterea Ellada,Chalkida,38.4625,23.595,6,3
+CID-070,Thessalia,Karditsa,39.3667,21.9167,2,3
+CID-071,Thessalia,Volos,39.3667,22.9333,9,3

@@ -1,0 +1,6 @@
+day,day_name,break_time_min,break_time_max,duration,time_end_max,start_time_min,start_time_max
+0,1.Monday,12,22,2,40,0,4
+1,2.Tuesday,12,22,2,44,0,4
+2,3.Wednesday,12,22,2,40,0,4
+3,4.Thursday,12,22,2,40,0,4
+4,5.Friday,12,22,2,36,0,4
