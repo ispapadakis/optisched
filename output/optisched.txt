@@ -1,0 +1,64 @@
+
+                              account_id     account_city  Pre Sched
+Day         Time In Time Out                                        
+1.Monday    08:00   08:00           base           Athens          0
+            08:15   09:00        CID-001           Tavros          0
+            09:15   10:00        CID-026       Korydallos          0
+            10:30   11:15        CID-020          Kifisia          0
+            11:15   11:45     Break-Time                -          1
+            12:00   12:45        CID-009            Pefki          0
+            13:15   14:00        CID-018           Alimos          0
+            14:15   15:00        CID-006         Elliniko          0
+            15:15   16:00        CID-039          Glyfada          0
+            16:15   17:00        CID-036        Ilioupoli          0
+            17:15   17:15           base           Athens          0
+2.Tuesday   08:00   08:00           base           Athens          0
+            08:15   09:00        CID-033       Nea Smyrni          0
+            09:15   10:00        CID-031  Agios Dimitrios          0
+            10:30   11:15        CID-023          Vyronas          0
+            11:15   11:45     Break-Time                -          1
+            12:00   12:45        CID-030         Zografos          0
+            13:00   13:45        CID-024          Galatsi          0
+            14:00   14:45        CID-037            Ilion          0
+            15:00   15:45        CID-042        Peristeri          0
+            16:00   16:45        CID-022       Petroupoli          0
+            17:15   17:15           base           Athens          0
+3.Wednesday 08:00   08:00           base           Athens          0
+                    08:00         hub1as     Thessaloniki          0
+            09:00   09:45        CID-059        Giannitsa          0
+            10:15   11:00        CID-058           Edessa          0
+            11:00   11:30     Break-Time                -          1
+            12:30   13:15        CID-050          Florina          0
+            14:45   15:30        CID-054      Alexandreia          0
+            16:15   17:00        CID-053         Efkarpia          0
+            17:15   17:15         hub1ae     Thessaloniki          0
+                    17:15           base           Athens          0
+4.Thursday  09:00   09:00           base           Athens          0
+                    09:00         hotel2            Patra          0
+            10:00   10:45        CID-047         Amaliada          0
+            11:00   11:30     Break-Time                -          1
+            12:00   12:45        CID-046           Pyrgos          0
+            14:15   15:00        CID-064          Tripoli          0
+            17:15   17:15           base           Athens          0
+5.Friday    09:00   09:00           base           Athens          0
+            09:30   10:15        CID-010         Artemida          0
+            10:45   11:30        CID-005        Nea Makri          0
+            12:00   12:45        CID-008           Koropi          0
+            12:45   13:15     Break-Time                -          1
+            13:45   14:30        CID-038           Nikaia          0
+            15:00   15:00           base           Athens          0
+
+Schedule Summary
+----------------
+Optimal Objective Value: 309
+Total Work Time:    44.0 hours
+Total Travel Time:  23.0 hours
+Total Service Time: 21.0 hours
+Total Client Calls: 28
+
+Appointment Stats
+  Total Appointments:       6
+  Appointments Kept:        0
+  Missed Appointments:      6
+  Rescheduled Appointments: 5
+  Dropped Appointments:     1

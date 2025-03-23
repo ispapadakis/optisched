@@ -140,7 +140,11 @@ def create_data_model(params, data_path, priority_cutoff=5):
             data["time_windows"][client] = TimeWindow(t, t, appt.loc[client,"day"], node)
         node += 1
     data["ndlabel"].append(appt_client)
-   
+ 
+    # Paths from Origin to Destination
+    with open(os.path.join(data_path,"travel_path.yml"), 'r') as f:
+        data["paths"] = yaml.safe_load(f)
+  
     # Travel Time
     #travel_time = line_distances(data,params)
     with open(os.path.join(data_path,"travel_distance.yml"), 'r') as f:
@@ -150,14 +154,17 @@ def create_data_model(params, data_path, priority_cutoff=5):
         [dist2time(tdist[lbl_from][lbl_to]) for lbl_to in points]
         for lbl_from in points
     ]
+    # Implement Hub Shortcuts
+    base_city = starts["account_city"][0]
     for node, lbl in enumerate(starts.index[1:],1):
+        hub_city = starts["account_city"][node]
         travel_time[node][0] = starts.loc[lbl,"dist_to_base"]
         travel_time[0][node] = starts.loc[lbl,"dist_from_base"]
-    data["time_matrix"] = travel_time # Order: [Starts, Active_Clients]
+        if starts.loc[lbl,"by_air"]:
+            data["paths"][base_city][hub_city] = [base_city,hub_city]
+            data["paths"][hub_city][base_city] = [hub_city,base_city]
 
-    # Paths from Origin to Destination
-    with open(os.path.join(data_path,"travel_path.yml"), 'r') as f:
-        data["paths"] = yaml.safe_load(f)
+    data["time_matrix"] = travel_time # Order: [Starts, Active_Clients]
    
     # Days
     data["days"] = pd.read_csv(os.path.join(data_path,"days.csv"), index_col=0) # Assumes One Break Per Day

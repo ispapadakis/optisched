@@ -1,5 +1,7 @@
 # Schedule Optimization: Trade Off Travel Time and Meeting Importance
 
+
+
 Features:
 
 - If it makes sense, keep prescheduled appointments
@@ -13,9 +15,11 @@ Inputs:
 - Territory Data
 - Workday Data
 - Prescheduled Appointments
+- Distances between locations
+- Mapping Info: Key Point Lat / Lon, Paths to Travel
 
 Outputs:
 
-- Daily Schedules
-- <a href="./output/RegionGR_map.html">Map of Scheduled Routes</a>
+- [Daily Schedules](output/optisched.txt)
+- [Map of Scheduled Routes](http://htmlpreview.github.io/?./output/RegionGR_map.html")
 - [Optimal Plan Stats by Client](output/RegionGR_account_stats.csv)

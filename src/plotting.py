@@ -35,6 +35,8 @@ def plot_region(routes, dropped, data, mapfile='weekly_schedule_map.html', outpu
 
         # Add the route line
         pth = grp["account_city"].tolist()
+        if grp["account_id"][1] in data["ndlabel"][0]: # do not show base to hub path
+            pth.pop(0)
         rprev = pth.pop(0)
         rdet = [rprev]
         for rnext in pth:

@@ -1,6 +1,6 @@
-account_id,account_city,longitude,latitude,dist_from_base,dist_to_base
-base,Athens,23.7281,37.9842,0,0
-hub1ae,Thessaloniki,22.9347,40.6403,1,0
-hub1as,Thessaloniki,22.9347,40.6403,0,1
-hotel2,Patra,21.7333,38.25,0,4
-hotel3,Larissa,22.4329,39.609,0,4
+account_id,account_city,longitude,latitude,dist_from_base,dist_to_base,by_air
+base,Athens,23.7281,37.9842,0,0,0
+hub1ae,Thessaloniki,22.9347,40.6403,1,0,1
+hub1as,Thessaloniki,22.9347,40.6403,0,1,1
+hotel2,Patra,21.7333,38.25,0,4,0
+hotel3,Larissa,22.4329,39.609,0,4,1
