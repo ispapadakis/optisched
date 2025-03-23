@@ -4,7 +4,7 @@ import pandas as pd
 from geopy import distance
 from collections import namedtuple
 
-def dist2time(x,speed=4.0, high_speed=10.0, high_speed_dist=10, very_high_speed=15.0, very_high_speed_dist=1000):
+def dist2time(x,speed=4.0, high_speed=10.0, high_speed_dist=10, very_high_speed=15.0, very_high_speed_dist=300):
     """Convert Distance to Time
     (Time Units are Quarter Hours)
 
@@ -47,6 +47,14 @@ def dist_miles(point0,point1):
     2444.0
     """
     return distance.distance(point0,point1).miles
+
+def line_distances(data,params):
+    points = data["nodes"].loc[data["node_label"],params["coord_cols"]].values.tolist()
+    travel_time = [
+        [dist2time(dist_miles(p_from,p_to)) for p_to in points]
+        for p_from in points
+    ]
+    return travel_time
 
 def primary_node(data):
     """Primary Node Correspondence
@@ -113,8 +121,11 @@ def create_data_model(params, data_path, priority_cutoff=5):
         data["nodes"][v] = data["nodes"][v].apply(lambda x: x.title() if isinstance(x,str) else "")
        
     # Labels of nodes active in the optimizatin model
-    data["node_label"] = starts.index.tolist() + clients
     data["ndlabel"] = [starts.index.tolist(),clients]
+    node_label = get_node_to_label(data)
+
+    # Coordinate Data
+    data["latlon"] = pd.read_csv(os.path.join(data_path,"points.csv"), index_col=1)
 
     # Time Windows
     TimeWindow = namedtuple("TimeWindow", ["start", "end", "day", "node"])
@@ -131,24 +142,22 @@ def create_data_model(params, data_path, priority_cutoff=5):
     data["ndlabel"].append(appt_client)
    
     # Travel Time
-    points = data["nodes"].loc[data["node_label"],params["coord_cols"]].values.tolist()
+    #travel_time = line_distances(data,params)
+    with open(os.path.join(data_path,"travel_distance.yml"), 'r') as f:
+        tdist = yaml.safe_load(f)
+    points = data["nodes"].loc[node_label,"account_city"].tolist()
     travel_time = [
-        [dist2time(dist_miles(p_from,p_to)) for p_to in points]
-        for p_from in points
+        [dist2time(tdist[lbl_from][lbl_to]) for lbl_to in points]
+        for lbl_from in points
     ]
     for node, lbl in enumerate(starts.index[1:],1):
         travel_time[node][0] = starts.loc[lbl,"dist_to_base"]
         travel_time[0][node] = starts.loc[lbl,"dist_from_base"]
     data["time_matrix"] = travel_time # Order: [Starts, Active_Clients]
-   
-    # Set Thessaloniki as hub for Northern Greece
-    #labelToNode = get_label_to_node(data)
-    #nodeToLabel = get_node_to_label(data)
-    #for lbl in data["ndlabel"][1]:
-    #    node = labelToNode[lbl]
-    #    lat = data["nodes"].loc[lbl,"latitude"]
-    #    if lat > 40.0:
-    #        data["time_matrix"][node][1] = 0
+
+    # Paths from Origin to Destination
+    with open(os.path.join(data_path,"travel_path.yml"), 'r') as f:
+        data["paths"] = yaml.safe_load(f)
    
     # Days
     data["days"] = pd.read_csv(os.path.join(data_path,"days.csv"), index_col=0) # Assumes One Break Per Day
@@ -174,7 +183,15 @@ def main():
     for k, v in data.items():
         print(k, type(v))
         if k == "time_matrix":
-            print(*v, sep="\n")
+            for row in v[:8]:
+                print(row[:8])
+            print("...")
+        elif k == "paths":
+            print("...")
+        elif k == "time_windows":
+            for tk in list(v.keys())[:3]:
+                print(tk, v[tk])
+            print("...")
         else:
             print(v)
     #print(params["name"])

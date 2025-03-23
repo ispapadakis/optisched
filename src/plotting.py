@@ -32,15 +32,22 @@ def plot_region(routes, dropped, data, mapfile='weekly_schedule_map.html', outpu
    
     # Show Day Schedules
     for (day, day_color), grp in routes.groupby(["Day","day_color"]):
+
         # Add the route line
+        pth = grp["account_city"].tolist()
+        rprev = pth.pop(0)
+        rdet = [rprev]
+        for rnext in pth:
+            rdet += data["paths"][rprev][rnext][1:]
+            rprev = rnext
+        daypath = data["latlon"].loc[rdet]
         fig.add_trace(
             go.Scattergeo(
-                lat=grp['latitude'],
-                lon=grp['longitude'],
+                lat=daypath['latitude'],
+                lon=daypath['longitude'],
                 mode='lines',
-                line=dict(width=2, color=day_color, dash = 'dot'),
+                line=dict(width=1, color=day_color, dash = 'dot'),
                 hoverinfo='none',
-                #marker= dict(size=10, color=day_color, symbol= "arrow-bar-up", angleref="previous"),
                 showlegend=False
                 )
         )
@@ -48,14 +55,16 @@ def plot_region(routes, dropped, data, mapfile='weekly_schedule_map.html', outpu
         # Show Visited Clients (exluding starts)
         active_clients = data["ndlabel"][1]
         coord_visited = grp.loc[grp["account_id"].isin(active_clients)]
-        assert len(coord_visited) == len(set(coord_visited.account_id))
+        active_client_city = coord_visited["account_city"]
+        latarray = data["latlon"].loc[active_client_city,"latitude"]
+        lonarray = data["latlon"].loc[active_client_city,"longitude"]
         fig.add_trace(
             go.Scattergeo(
-                    lat=coord_visited['latitude'],
-                    lon=coord_visited['longitude'],
+                    lat=latarray,
+                    lon=lonarray,
                     mode='markers',
                     hoverinfo='text',
-                    text=coord_visited.apply(lambda x: x["account_id"] + " - " + x["Time Out"] + " " + x["Day"], axis=1),
+                    text=coord_visited.apply(lambda x: x["account_city"] + ":" + x["account_id"] + " - " + x["Time Out"] + " " + x["Day"], axis=1),
                     marker=dict(
                         size=8,
                         symbol='square',
@@ -68,10 +77,13 @@ def plot_region(routes, dropped, data, mapfile='weekly_schedule_map.html', outpu
 
     # Show Starts
     starts = data["ndlabel"][0]
+    start_city = data["nodes"].loc[starts, 'account_city']
+    latarray = data["latlon"].loc[start_city,"latitude"]
+    lonarray = data["latlon"].loc[start_city,"longitude"]
     fig.add_trace(
         go.Scattergeo(
-                lat=data["nodes"].loc[starts, 'latitude'],
-                lon=data["nodes"].loc[starts, 'longitude'],
+                lat=latarray,
+                lon=lonarray,
                 mode='markers',
                 hoverinfo='text',
                 text=starts,
@@ -89,10 +101,13 @@ def plot_region(routes, dropped, data, mapfile='weekly_schedule_map.html', outpu
     if dropped:
         coord_dropped = data["nodes"].loc[dropped]
         coord_dropped.sort_values(by="priority", ascending=True, inplace=True)
+        dropped_client_city = coord_dropped["account_city"]
+        latarray = data["latlon"].loc[dropped_client_city,"latitude"]
+        lonarray = data["latlon"].loc[dropped_client_city,"longitude"]
         fig.add_trace(
             go.Scattergeo(
-                    lat=coord_dropped['latitude'],
-                    lon=coord_dropped['longitude'],
+                    lat=latarray,
+                    lon=lonarray,
                     mode='markers',
                     hoverinfo='text',
                     text=coord_dropped.reset_index().apply(lambda x: "{} Priority:{:.1f}".format(x["account_id"],x["priority"]), axis=1),
@@ -110,10 +125,13 @@ def plot_region(routes, dropped, data, mapfile='weekly_schedule_map.html', outpu
     nodes_remaining = set(data["nodes"].index) - set(starts) - set(active_clients)
     if nodes_remaining:
         coord_remaining = data["nodes"].loc[list(nodes_remaining)]
+        remaining_client_city = coord_remaining["account_city"]
+        latarray = data["latlon"].loc[remaining_client_city,"latitude"]
+        lonarray = data["latlon"].loc[remaining_client_city,"longitude"]
         fig.add_trace(
             go.Scattergeo(
-                    lat=coord_remaining['latitude'],
-                    lon=coord_remaining['longitude'],
+                    lat=latarray,
+                    lon=lonarray,
                     mode='markers',
                     hoverinfo='text',
                     text=coord_remaining.account_city,

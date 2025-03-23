@@ -3,7 +3,7 @@ import matplotlib.colors as mcolors
 
 import pandas as pd
 
-from src.inputs import primary_node, get_label_to_node
+from src.inputs import primary_node, get_label_to_node, get_node_to_label
 
 def time_string(total_minutes, start_time=8*60):
     """Convert Minutes to Time String Since Start of Day
@@ -47,11 +47,11 @@ def store_result(data, manager, routing, solution, params):
     dropped = set(data["ndlabel"][1])
     miss_appt = set(data["ndlabel"][2])
    
-    def get_stop_data(index, dropped, miss_appt, service_time):
+    def get_stop_data(index, dropped, miss_appt, service_time, node_label):
         time_var = time_dimension.CumulVar(index)
         id = manager.IndexToNode(index)
         pid = primary[id]
-        lbl = data["node_label"][pid]
+        lbl = node_label[pid]
         service_time += data["nodes"]['service_time'].loc[lbl]
         dropped -= {lbl}
         pre_sched = 0
@@ -75,17 +75,18 @@ def store_result(data, manager, routing, solution, params):
 
     total_time = 0
     total_service_time = 0
+    node_label = get_node_to_label(data)
     for day_id in data["days"].index:
         day_name = data["days"].loc[day_id,"day_name"]
         day_color = mcolors.to_hex(cmap(day_id))
         index = routing.Start(day_id)
         day_data = []
         while not routing.IsEnd(index):
-            row, total_service_time = get_stop_data(index, dropped, miss_appt, total_service_time)
+            row, total_service_time = get_stop_data(index, dropped, miss_appt, total_service_time, node_label)
             day_data.append(row)
             index = solution.Value(routing.NextVar(index))
         total_time += solution.Min(time_dimension.CumulVar(index))
-        row, total_service_time = get_stop_data(index, dropped, miss_appt, total_service_time)
+        row, total_service_time = get_stop_data(index, dropped, miss_appt, total_service_time, node_label)
         day_data.append(row)
         day_data.append(get_break_row())  
         routes.append(pd.DataFrame(day_data, columns=cols))
