@@ -21,5 +21,5 @@ Inputs:
 Outputs:
 
 - [Daily Schedules](output/optisched.txt)
-- [Map of Scheduled Routes](http://htmlpreview.github.io/?./output/RegionGR_map.html)
+- [Map of Scheduled Routes](http://htmlpreview.github.io/?https://github.com/ispapadakis/optisched/output/RegionGR_map.html)
 - [Optimal Plan Stats by Client](output/RegionGR_account_stats.csv)
