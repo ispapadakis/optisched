@@ -33,5 +33,5 @@ Schedule weekly client calls to a) maximize the priority of in-schedule clients,
 **Output**:
 
 - [Weekly Schedule](output/optisched.txt)
-- [Map of Daily Routes](http://htmlpreview.github.io/?https://github.com/ispapadakis/optisched/blob/main/output/RegionGR_map.html)
+- [Map of Daily Routes](http://htmlpreview.github.io/?https://github.com/ispapadakis/optisched/blob/low_penalty_missappt/output/RegionGR_map.html)
 - [Optimal Plan Stats by Client](output/RegionGR_account_stats.csv)
