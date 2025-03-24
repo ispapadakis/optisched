@@ -4,7 +4,7 @@ from src.optim import optmodel
 import sys
 
 def main():
-    #sys.stdout = open('output/optisched.txt', 'w')
+    #sys.stdout = open('output/optisched.txt', 'w') # Send results to file
     data, params = get_model_data()
     routes, dropped = optmodel(data, params)
     plot_region(routes, dropped, data, mapfile=params["name"]+"_map.html")

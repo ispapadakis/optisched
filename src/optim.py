@@ -155,7 +155,7 @@ def optmodel(data, params):
         routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
     )
     search_parameters.local_search_metaheuristic = (
-        routing_enums_pb2.LocalSearchMetaheuristic.AUTOMATIC
+        routing_enums_pb2.LocalSearchMetaheuristic.TABU_SEARCH
         )
     search_parameters.time_limit.FromSeconds(params["run_time_limit"])
 
