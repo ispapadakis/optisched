@@ -24,7 +24,7 @@ output_path: "output"
 territory_center: {'lat':39.6417, 'lon':22.4167}
 
 ### Optimization Parameters
-run_time_limit: 10
+run_time_limit: 120
 # Time Windows
 allow_waiting_time: 24
 max_time_units_per_day: 52

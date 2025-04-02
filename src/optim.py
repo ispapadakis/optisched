@@ -7,7 +7,7 @@ import sys
 from src.outputs import store_result, print_solution
 from src.inputs import primary_node, get_node_to_label
 
-def optmodel(data, params):
+def optmodel(data, params, start_from_initial_solution=True, save_solution=False):
     """Based on ORTools Vehicles Routing Problem (VRP) with Time Windows.
     Implements:
         - Client Priority
@@ -149,25 +149,69 @@ def optmodel(data, params):
         routing.AddVariableMinimizedByFinalizer(time_dimension.CumulVar(routing.Start(d)))
         routing.AddVariableMinimizedByFinalizer(time_dimension.CumulVar(routing.End(d)))
 
+    # Check if Initial Solution is Available
+    initial_solution = None
+    if start_from_initial_solution:
+        try:
+            stored_initial_solution = read_initial_solution()
+            initial_solution = routing.ReadAssignmentFromRoutes(stored_initial_solution, True)
+            print("Initial Solution:")
+            routes, dropped, miss_appt, info = store_result(data, manager, routing, initial_solution, params)
+            print_solution(initial_solution, data, routes, dropped, miss_appt, info)
+            print("\nEnd Initial Solution\n")
+        except FileNotFoundError:
+            print("No Initial Solution")
+
     # Setting first solution heuristic.
     search_parameters = pywrapcp.DefaultRoutingSearchParameters()
     search_parameters.first_solution_strategy = (
         routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
     )
     search_parameters.local_search_metaheuristic = (
-        routing_enums_pb2.LocalSearchMetaheuristic.TABU_SEARCH
+        routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH
         )
     search_parameters.time_limit.FromSeconds(params["run_time_limit"])
 
     # Solve the problem.
-    solution = routing.SolveWithParameters(search_parameters)
-    print()
+    if initial_solution:
+        solution = routing.SolveFromAssignmentWithParameters(initial_solution, search_parameters)
+    else:
+        solution = routing.SolveWithParameters(search_parameters)
 
     # Print solution on console.
     if solution:
-        #print_solution(data, manager, routing, solution, params)
+        status = ["Not Solved","Success","Local Optimum Not Reached","Fail","Fail Timeout","Invalid","Infeasible"]
+        print("Optimization Finished: ",status[routing.status()])
+        # Save Current Solution: Could Work as Initial Solution of Next Run
+        if save_solution:
+            save_solution_list(solution_list(solution, manager, routing))
         routes, dropped, miss_appt, info = store_result(data, manager, routing, solution, params)
         print_solution(solution, data, routes, dropped, miss_appt, info)
         return routes, dropped
     else:
         sys.exit("*\n*\n*   No solution found !\n*\n*")
+
+def solution_list(solution, manager, routing):
+    routes = []
+    for route_number in range(routing.vehicles()):
+        index = routing.Start(route_number)
+        route = []
+        while not routing.IsEnd(index):
+            node_index = manager.IndexToNode(index)
+            route.append(node_index)
+            index = solution.Value(routing.NextVar(index))
+        routes.append(route[1:])
+    return routes
+
+def save_solution_list(soln_list, filename="./initial_solution.txt"):
+    with open(filename, 'w') as f:
+        for route in soln_list:
+            print(" ".join([str(i) for i in route]), file=f)
+
+def read_initial_solution(filename="./initial_solution.txt"):
+    routes = []
+    with open(filename, 'r') as f:
+        for ln in f.readlines():
+            routes.append([int(i) for i in ln.split(" ")])
+    return routes
+

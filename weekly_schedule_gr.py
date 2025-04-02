@@ -6,7 +6,12 @@ import sys
 def main():
     #sys.stdout = open('output/optisched.txt', 'w') # Send results to file
     data, params = get_model_data()
-    routes, dropped = optmodel(data, params)
+    routes, dropped = optmodel(
+        data, 
+        params, 
+        start_from_initial_solution=True, 
+        save_solution=False
+        )
     plot_region(routes, dropped, data, mapfile=params["name"]+"_map.html")
 
 if __name__ == "__main__":
