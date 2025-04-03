@@ -5,6 +5,8 @@ import pandas as pd
 
 from src.inputs import primary_node, get_label_to_node, get_node_to_label
 
+WORKDAY_NAME = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+
 def time_string(total_minutes, start_time=8*60):
     """Convert Minutes to Time String Since Start of Day
    
@@ -17,40 +19,51 @@ def time_string(total_minutes, start_time=8*60):
     """
     return "{:02d}:{:02d}".format(*divmod(total_minutes + start_time, 60))
 
-def store_result(data, manager, routing, solution, params):
+def print_sched_sequence(label, appt_start_node, seqs):
+    print("Schedule Plan:")
+    for day_id, seq_ in enumerate(seqs):
+        print(WORKDAY_NAME[day_id])
+        print("-"*10)
+        for id in [0]+seq_+[0]:
+            lbl = label[id]
+            if id >= appt_start_node:
+                print(lbl+" (Prior Appt)")
+            else:
+                print(lbl)
+        print()
+
+def store_result(data, params, seqs, tstarts, brks):
     """Store Optimation Results and Save Results File
    
     Args:
         data (dict): Dictionary with keys: "label", "service_time", "time_windows", "days", "coords"
-        manager (ortools.RoutingIndexManager): Index Manager
-        routing (ortools.RoutingModel): Routing Model
-        solution (ortools.RoutingModel): Solution
         params (dict): Dictionary with keys: "timeunits2minutes"
+        seqs (list): Nodes Visited by Day
+        tstarts (list): Time to start Visit to each Node by Day
+        brks (list): Break start and Break End by Day
        
     Returns:
         tuple:
             - DataFrame with columns: "account_id", "Time In", "Time Out", "Pre Sched", "Day", "day_color"
             - List of Dropped Account Ids
             - List of Missed Appointment Account Ids
+            - Solution Info Dict
    
     Saves File with Account Stats
     """
     primary = primary_node(data)
+    print(seqs)
    
-    time_dimension = routing.GetDimensionOrDie("Time")
     cols = ["account_id","Time In","Time Out","Pre Sched","Day", "day_color"]
     cmap = plt.get_cmap('Set1',len(data["days"]))
    
     node_label = get_node_to_label(data)
     routes = []
     info = dict()
-    intervals = solution.IntervalVarContainer()
     dropped = set(data["ndlabel"][1])
     miss_appt = set(data["ndlabel"][2])
    
-    def get_stop_data(index, dropped, miss_appt, service_time):
-        time_var = time_dimension.CumulVar(index)
-        id = manager.IndexToNode(index)
+    def get_stop_data(id, ts, dropped, miss_appt, service_time):
         pid = primary[id]
         lbl = node_label[pid]
         service_time += data["nodes"]['service_time'].loc[lbl]
@@ -60,15 +73,15 @@ def store_result(data, manager, routing, solution, params):
             miss_appt -= {lbl}
             if lbl in data["ndlabel"][2]:
                 pre_sched = 1
-        t_in  = solution.Min(time_var)*params["timeunits2minutes"]
-        t_out = (solution.Max(time_var)+int(data["nodes"]['service_time'].iloc[pid]))*params["timeunits2minutes"]
+        t_in  = ts*params["timeunits2minutes"]
+        t_out = (ts+int(data["nodes"]['service_time'].iloc[pid]))*params["timeunits2minutes"]
         return (lbl, time_string(t_in), time_string(t_out), pre_sched, day_name, day_color), service_time
 
-    def get_break_row():
-        brk = intervals.Element(day_id)
-        if brk.PerformedValue():
-            tb_in = brk.StartValue()*params["timeunits2minutes"]
-            tb_out = (brk.StartValue() + brk.DurationValue())*params["timeunits2minutes"]
+    def get_break_row(brk):
+        if brk:
+            ts, te = brk
+            tb_in = ts*params["timeunits2minutes"]
+            tb_out = te*params["timeunits2minutes"]
             break_row = ("Break-Time", time_string(tb_in), time_string(tb_out), 1, day_name, day_color)
         else:
             break_row = ("Break-Skip", "20:00", "20:30", 1, day_name, None)
@@ -79,16 +92,15 @@ def store_result(data, manager, routing, solution, params):
     for day_id in data["days"].index:
         day_name = data["days"].loc[day_id,"day_name"]
         day_color = mcolors.to_hex(cmap(day_id))
-        index = routing.Start(day_id)
+        seq_ = seqs[day_id]
+        tstart = tstarts[day_id]
+        brk = brks[day_id]
         day_data = []
-        while not routing.IsEnd(index):
-            row, total_service_time = get_stop_data(index, dropped, miss_appt, total_service_time)
+        for id, ts in zip(seq_,tstart):
+            row, total_service_time = get_stop_data(id, ts, dropped, miss_appt, total_service_time)
             day_data.append(row)
-            index = solution.Value(routing.NextVar(index))
-        total_time += solution.Min(time_dimension.CumulVar(index))
-        row, total_service_time = get_stop_data(index, dropped, miss_appt, total_service_time)
-        day_data.append(row)
-        day_data.append(get_break_row())  
+        total_time += ts # Time of Day's Route End (Note: ts == te for Base)
+        day_data.append(get_break_row(brk))
         routes.append(pd.DataFrame(day_data, columns=cols))
     routes = pd.concat(routes).join(data["nodes"], on="account_id", how="left") # Return Routes as Pandas DataFrame
     routes = routes.fillna({"account_city":"-"})
@@ -152,14 +164,13 @@ def store_result(data, manager, routing, solution, params):
 
     return routes, dropped, miss_appt, info
 
-def print_solution(solution, data, routes, dropped, miss_appt, info):  
+def print_solution(data, routes, dropped, miss_appt, info):  
     """Print Solution to Console
     """
     print(routes.set_index(["Day","Time In","Time Out"])[["account_id", "account_city", "Pre Sched"]])
    
     print("\nSchedule Summary")
     print("----------------")
-    print(f"Optimal Objective Value: {solution.ObjectiveValue():,d}")
     print("Total Work Time:    {total_time_hours:.1f} hours".format(**info))
     print("Total Travel Time:  {total_travel_time_hours:.1f} hours".format(**info))
     print("Total Service Time: {total_service_time_hours:.1f} hours".format(**info))

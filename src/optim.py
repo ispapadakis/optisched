@@ -4,7 +4,7 @@ from ortools.constraint_solver import routing_enums_pb2
 from ortools.constraint_solver import pywrapcp
 import sys
 
-from src.outputs import store_result, print_solution
+from src.outputs import store_result, print_solution, print_sched_sequence
 from src.inputs import primary_node, get_node_to_label
 
 SOLUTION_STATUS = [
@@ -19,7 +19,7 @@ SOLUTION_STATUS = [
 
 TIME_DIM_NAME = "Time"
 
-def optmodel(data, params, start_from_initial_solution=True, save_solution=False):
+def optmodel(data, params, start_from_initial_solution=True, save_solution=False, verbose=True):
     """Based on ORTools Vehicles Routing Problem (VRP) with Time Windows.
     Implements:
         - Client Priority
@@ -32,7 +32,8 @@ def optmodel(data, params, start_from_initial_solution=True, save_solution=False
         data (dict): Dictionary with keys: "time_matrix", "time_windows", "days", "node_label"
         params (dict): Dictionary
         start_from_initial_solution (bool): Read initial solution from file. Defaults to True.
-        save_solution (bool): save optimal solution as future initial solution. Defualts to False.
+        save_solution (bool): save optimal solution as future initial solution. Defaults to False.
+        verbose (bool): show raw results. Defaults to True.
        
     Returns:
         tuple: Tuple of DataFrames with keys: "routes", "dropped"
@@ -63,7 +64,8 @@ def optmodel(data, params, start_from_initial_solution=True, save_solution=False
         from_node = primary[manager.IndexToNode(from_index)]
         to_node   = primary[manager.IndexToNode(to_index)]
         travel_time = data['time_matrix'][from_node][to_node]
-        service_time = data["nodes"]['service_time'].iloc[from_node]
+        lbl = nodeTolabel[from_node]
+        service_time = data["nodes"]['service_time'].loc[lbl]
         return int(travel_time + service_time)
 
     transit_callback_index = routing.RegisterTransitCallback(time_callback)
@@ -168,10 +170,6 @@ def optmodel(data, params, start_from_initial_solution=True, save_solution=False
         try:
             stored_initial_solution = read_initial_solution()
             initial_solution = routing.ReadAssignmentFromRoutes(stored_initial_solution, True)
-            print("Initial Solution:")
-            routes, dropped, miss_appt, info = store_result(data, manager, routing, initial_solution, params)
-            print_solution(initial_solution, data, routes, dropped, miss_appt, info)
-            print("\nEnd Initial Solution\n")
         except FileNotFoundError:
             print("No Initial Solution")
 
@@ -188,6 +186,11 @@ def optmodel(data, params, start_from_initial_solution=True, save_solution=False
     # Solve the problem.
     if initial_solution:
         solution = routing.SolveFromAssignmentWithParameters(initial_solution, search_parameters)
+        if verbose:
+            print("Initial Solution:")
+            print_sched_sequence(nodeTolabel, n_starts + n_clients, stored_initial_solution)
+            print(f"Initial Objective Value: {solution.ObjectiveValue():,d}")
+            print("\nEnd Initial Solution\n")
     else:
         solution = routing.SolveWithParameters(search_parameters)
 
@@ -195,15 +198,15 @@ def optmodel(data, params, start_from_initial_solution=True, save_solution=False
     if solution:
         print("Optimization Finished: ",SOLUTION_STATUS[routing.status()])
         seqs, tstarts, brks = read_solution(solution, manager, routing)
-        print(seqs)
-        print(tstarts)
-        print(brks)
         # Save Current Solution: Could Work as Initial Solution of Next Run
         if save_solution:
             save_solution_sequence(seqs)
-        routes, dropped, miss_appt, info = store_result(data, manager, routing, solution, params)
-        print_solution(solution, data, routes, dropped, miss_appt, info)
-        return routes, dropped
+        if verbose:
+            print("\nOptimal Solution:")
+            print_sched_sequence(nodeTolabel, n_starts + n_clients, [seq_[1:-1] for seq_ in seqs])
+            print(f"Optimal Objective Value: {solution.ObjectiveValue():,d}")
+            print("\nEnd Optimal Solution\n")    
+        return seqs, tstarts, brks
     else:
         sys.exit("*\n*\n*   No solution found !\n*\n*")
 
