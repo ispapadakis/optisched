@@ -1,4 +1,5 @@
-Initial Solution:
+Optimization Finished:  Success
+Optimal Objective Value: 308
                               account_id     account_city  Pre Sched
 Day         Time In Time Out                                        
 1.Monday    09:00   09:00           base           Athens          0
@@ -24,74 +25,8 @@ Day         Time In Time Out
 3.Wednesday 09:00   09:00           base           Athens          0
             09:30   10:15        CID-009            Pefki          0
             10:30   11:15        CID-020          Kifisia          0
-            11:15   11:45     Break-Time                -          1
-            12:15   13:00        CID-005        Nea Makri          0
-            13:30   14:15        CID-010         Artemida          0
-            14:45   15:30        CID-008           Koropi          0
-            16:00   16:45        CID-023          Vyronas          0
-            17:00   17:00           base           Athens          0
-4.Thursday  09:00   09:00           base           Athens          0
-                    09:00         hotel2            Patra          0
-            10:00   10:45        CID-047         Amaliada          1
-            11:30   12:15        CID-046           Pyrgos          0
-            12:15   12:45     Break-Time                -          1
-            14:15   15:00        CID-064          Tripoli          0
-            17:15   17:15           base           Athens          0
-5.Friday    09:00   09:00           base           Athens          0
-                    09:00         hub1as     Thessaloniki          0
-            09:15   10:00        CID-060      Stavroupoli          0
-            11:15   12:00        CID-058           Edessa          0
-            12:00   12:30     Break-Time                -          1
-            13:00   13:45        CID-059        Giannitsa          1
-            14:15   15:00        CID-054      Alexandreia          0
-            15:45   15:45         hub1ae     Thessaloniki          0
-                    15:45           base           Athens          0
-
-Schedule Summary
-----------------
-Optimal Objective Value: 311
-Total Work Time:    44.5 hours
-Total Travel Time:  24.2 hours
-Total Service Time: 20.2 hours
-Total Client Calls: 27
-
-Appointment Stats
-  Total Appointments:       6
-  Appointments Kept:        4
-  Missed Appointments:      2
-  Rescheduled Appointments: 1
-  Dropped Appointments:     1
-
-End Initial Solution
-
-Optimization Finished:  Success
-                              account_id     account_city  Pre Sched
-Day         Time In Time Out                                        
-1.Monday    09:00   09:00           base           Athens          0
-            09:15   10:00        CID-033       Nea Smyrni          0
-            10:15   11:00        CID-001           Tavros          0
-            11:00   11:30     Break-Time                -          1
-            12:00   12:45        CID-026       Korydallos          1
-            13:00   13:45        CID-038           Nikaia          0
-            14:15   15:00        CID-039          Glyfada          0
-            15:15   16:00        CID-036        Ilioupoli          0
-            16:15   17:00        CID-030         Zografos          0
-            17:15   17:15           base           Athens          0
-2.Tuesday   09:00   09:00           base           Athens          0
-            09:15   10:00        CID-024          Galatsi          0
-            10:30   11:15        CID-037            Ilion          0
-            11:30   12:15        CID-022       Petroupoli          0
-            12:15   12:45     Break-Time                -          1
-            13:00   13:45        CID-042        Peristeri          1
-            14:15   15:00        CID-006         Elliniko          0
-            15:15   16:00        CID-018           Alimos          0
-            16:15   17:00        CID-031  Agios Dimitrios          0
-            17:15   17:15           base           Athens          0
-3.Wednesday 09:00   09:00           base           Athens          0
-            09:45   10:30        CID-009            Pefki          0
-            10:45   11:30        CID-020          Kifisia          0
-            11:30   12:00     Break-Time                -          1
-            12:30   13:15        CID-005        Nea Makri          0
+            12:00   12:45        CID-005        Nea Makri          0
+            12:45   13:15     Break-Time                -          1
             13:45   14:30        CID-010         Artemida          0
             15:00   15:45        CID-008           Koropi          0
             16:15   17:00        CID-023          Vyronas          0
@@ -116,7 +51,6 @@ Day         Time In Time Out
 
 Schedule Summary
 ----------------
-Optimal Objective Value: 308
 Total Work Time:    45.8 hours
 Total Travel Time:  24.8 hours
 Total Service Time: 21.0 hours

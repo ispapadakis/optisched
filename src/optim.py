@@ -188,8 +188,8 @@ def optmodel(data, params, start_from_initial_solution=True, save_solution=False
         solution = routing.SolveFromAssignmentWithParameters(initial_solution, search_parameters)
         if verbose:
             print("Initial Solution:")
-            print_sched_sequence(nodeTolabel, n_starts + n_clients, stored_initial_solution)
             print(f"Initial Objective Value: {solution.ObjectiveValue():,d}")
+            print_sched_sequence(nodeTolabel, n_starts + n_clients, stored_initial_solution)
             print("\nEnd Initial Solution\n")
     else:
         solution = routing.SolveWithParameters(search_parameters)
@@ -197,6 +197,7 @@ def optmodel(data, params, start_from_initial_solution=True, save_solution=False
     # Print solution on console.
     if solution:
         print("Optimization Finished: ",SOLUTION_STATUS[routing.status()])
+        print(f"Optimal Objective Value: {solution.ObjectiveValue():,d}")
         seqs, tstarts, brks = read_solution(solution, manager, routing)
         # Save Current Solution: Could Work as Initial Solution of Next Run
         if save_solution:
@@ -204,7 +205,6 @@ def optmodel(data, params, start_from_initial_solution=True, save_solution=False
         if verbose:
             print("\nOptimal Solution:")
             print_sched_sequence(nodeTolabel, n_starts + n_clients, [seq_[1:-1] for seq_ in seqs])
-            print(f"Optimal Objective Value: {solution.ObjectiveValue():,d}")
             print("\nEnd Optimal Solution\n")    
         return seqs, tstarts, brks
     else:

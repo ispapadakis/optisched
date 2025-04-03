@@ -32,4 +32,4 @@ base_min_start: 0
 window_max_time: 100
 # Objective Weights
 miss_appointment_penalty: 6 # set to 1 to ignore appointment misses
-global_span_cost: 3 # coeff * (max_end - min_start) - Higher value reduces weekly span
+global_span_cost: 1 # coeff * (max_end - min_start) - Higher value reduces weekly span

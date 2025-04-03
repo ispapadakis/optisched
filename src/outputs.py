@@ -52,7 +52,6 @@ def store_result(data, params, seqs, tstarts, brks):
     Saves File with Account Stats
     """
     primary = primary_node(data)
-    print(seqs)
    
     cols = ["account_id","Time In","Time Out","Pre Sched","Day", "day_color"]
     cmap = plt.get_cmap('Set1',len(data["days"]))

@@ -11,7 +11,8 @@ def main():
         data, 
         params, 
         start_from_initial_solution=True, 
-        save_solution=False
+        save_solution=False,
+        verbose=False
         )
     routes, dropped, miss_appt, info = store_result(data, params, seqs, tstarts, brks)
     print_solution(data, routes, dropped, miss_appt, info)
