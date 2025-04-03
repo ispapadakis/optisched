@@ -17,6 +17,8 @@ SOLUTION_STATUS = [
     "Infeasible"
     ]
 
+TIME_DIM_NAME = "Time"
+
 def optmodel(data, params, start_from_initial_solution=True, save_solution=False):
     """Based on ORTools Vehicles Routing Problem (VRP) with Time Windows.
     Implements:
@@ -73,15 +75,14 @@ def optmodel(data, params, start_from_initial_solution=True, save_solution=False
     # [END arc_cost]
 
     # Add Time Windows constraint.
-    time = "Time"
     routing.AddDimension(
         transit_callback_index,
         params["allow_waiting_time"],      # allow waiting time
         params["max_time_units_per_day"],  # maximum time per day [this limit is tightened by day limit later]
         False,  # Don't force start cumul to zero.
-        time,
+        TIME_DIM_NAME,
     )
-    time_dimension = routing.GetDimensionOrDie(time)
+    time_dimension = routing.GetDimensionOrDie(TIME_DIM_NAME)
     time_dimension.SetGlobalSpanCostCoefficient(params["global_span_cost"])
    
     # Add time window constraints for existing appointments.
@@ -193,31 +194,49 @@ def optmodel(data, params, start_from_initial_solution=True, save_solution=False
     # Print solution on console.
     if solution:
         print("Optimization Finished: ",SOLUTION_STATUS[routing.status()])
+        seqs, tstarts, brks = read_solution(solution, manager, routing)
+        print(seqs)
+        print(tstarts)
+        print(brks)
         # Save Current Solution: Could Work as Initial Solution of Next Run
         if save_solution:
-            save_solution_list(solution_list(solution, manager, routing))
+            save_solution_sequence(seqs)
         routes, dropped, miss_appt, info = store_result(data, manager, routing, solution, params)
         print_solution(solution, data, routes, dropped, miss_appt, info)
         return routes, dropped
     else:
         sys.exit("*\n*\n*   No solution found !\n*\n*")
 
-def solution_list(solution, manager, routing):
+def read_solution(solution, manager, routing):
     routes = []
+    breaks = []
+    time_starts = []
+    time_dimension = routing.GetDimensionOrDie(TIME_DIM_NAME)
+    intervals = solution.IntervalVarContainer()
     for route_number in range(routing.vehicles()):
+        brk = intervals.Element(route_number)
         index = routing.Start(route_number)
         route = []
-        while not routing.IsEnd(index):
+        time_start = []
+        while True:
             node_index = manager.IndexToNode(index)
             route.append(node_index)
-            index = solution.Value(routing.NextVar(index))
-        routes.append(route[1:])
-    return routes
+            time_start.append(solution.Min(time_dimension.CumulVar(index)))
+            if routing.IsEnd(index):
+                break
+            else:
+                index = solution.Value(routing.NextVar(index))
+        routes.append(route)
+        time_starts.append(time_start)
+        breaks.append(
+            (brk.StartValue(), brk.StartValue() + brk.DurationValue()) if brk.PerformedValue() else None
+            )
+    return routes, time_starts, breaks
 
-def save_solution_list(soln_list, filename="./initial_solution.txt"):
+def save_solution_sequence(soln_list, filename="./initial_solution.txt"):
     with open(filename, 'w') as f:
         for route in soln_list:
-            print(" ".join([str(i) for i in route]), file=f)
+            print(" ".join([str(i) for i in route[1:-1]]), file=f)
 
 def read_initial_solution(filename="./initial_solution.txt"):
     routes = []

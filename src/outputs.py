@@ -41,13 +41,14 @@ def store_result(data, manager, routing, solution, params):
     cols = ["account_id","Time In","Time Out","Pre Sched","Day", "day_color"]
     cmap = plt.get_cmap('Set1',len(data["days"]))
    
+    node_label = get_node_to_label(data)
     routes = []
     info = dict()
     intervals = solution.IntervalVarContainer()
     dropped = set(data["ndlabel"][1])
     miss_appt = set(data["ndlabel"][2])
    
-    def get_stop_data(index, dropped, miss_appt, service_time, node_label):
+    def get_stop_data(index, dropped, miss_appt, service_time):
         time_var = time_dimension.CumulVar(index)
         id = manager.IndexToNode(index)
         pid = primary[id]
@@ -75,18 +76,17 @@ def store_result(data, manager, routing, solution, params):
 
     total_time = 0
     total_service_time = 0
-    node_label = get_node_to_label(data)
     for day_id in data["days"].index:
         day_name = data["days"].loc[day_id,"day_name"]
         day_color = mcolors.to_hex(cmap(day_id))
         index = routing.Start(day_id)
         day_data = []
         while not routing.IsEnd(index):
-            row, total_service_time = get_stop_data(index, dropped, miss_appt, total_service_time, node_label)
+            row, total_service_time = get_stop_data(index, dropped, miss_appt, total_service_time)
             day_data.append(row)
             index = solution.Value(routing.NextVar(index))
         total_time += solution.Min(time_dimension.CumulVar(index))
-        row, total_service_time = get_stop_data(index, dropped, miss_appt, total_service_time, node_label)
+        row, total_service_time = get_stop_data(index, dropped, miss_appt, total_service_time)
         day_data.append(row)
         day_data.append(get_break_row())  
         routes.append(pd.DataFrame(day_data, columns=cols))
