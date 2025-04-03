@@ -7,6 +7,16 @@ import sys
 from src.outputs import store_result, print_solution
 from src.inputs import primary_node, get_node_to_label
 
+SOLUTION_STATUS = [
+    "Not Solved",
+    "Success",
+    "Local Optimum Not Reached",
+    "Fail",
+    "Fail Timeout",
+    "Invalid",
+    "Infeasible"
+    ]
+
 def optmodel(data, params, start_from_initial_solution=True, save_solution=False):
     """Based on ORTools Vehicles Routing Problem (VRP) with Time Windows.
     Implements:
@@ -19,6 +29,8 @@ def optmodel(data, params, start_from_initial_solution=True, save_solution=False
     Args:
         data (dict): Dictionary with keys: "time_matrix", "time_windows", "days", "node_label"
         params (dict): Dictionary
+        start_from_initial_solution (bool): Read initial solution from file. Defaults to True.
+        save_solution (bool): save optimal solution as future initial solution. Defualts to False.
        
     Returns:
         tuple: Tuple of DataFrames with keys: "routes", "dropped"
@@ -180,8 +192,7 @@ def optmodel(data, params, start_from_initial_solution=True, save_solution=False
 
     # Print solution on console.
     if solution:
-        status = ["Not Solved","Success","Local Optimum Not Reached","Fail","Fail Timeout","Invalid","Infeasible"]
-        print("Optimization Finished: ",status[routing.status()])
+        print("Optimization Finished: ",SOLUTION_STATUS[routing.status()])
         # Save Current Solution: Could Work as Initial Solution of Next Run
         if save_solution:
             save_solution_list(solution_list(solution, manager, routing))

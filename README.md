@@ -14,6 +14,7 @@ Schedule weekly client calls to a) maximize the priority of in-schedule clients,
 - If it makes sense, keep prescheduled appointments
 - Add Breaks in Work Day in a Flexible Way
 - Accommodate Hotel Stays to Service Remote Areas
+- Option to begin from Initial Solution
 
 **Input**:
 
