@@ -112,12 +112,12 @@ def create_data_model(params, data_path, priority_cutoff=5):
    
     # Select Client Accounts for Optimization
     clients = []
-    data["inactive_clients"] = []
+    data["inactive_client_city"] = []
     for lbl in acct.index:
         if acct.loc[lbl, "priority"] > priority_cutoff:
             clients.append(lbl)
         else:
-            data["inactive_clients"].append(lbl)
+            data["inactive_client_city"].append(acct.loc[lbl, "account_city"])
     data["n_clients"] = len(clients)
 
     # Read Appointment Data: Form Time Windows
@@ -149,16 +149,6 @@ def create_data_model(params, data_path, priority_cutoff=5):
     data["service_time"] = [0] * data["n_starts"] + [int(acct.loc[lbl,"service_time"]) for lbl in clients]
     data["account_city"] = [starts.loc[lbl,"account_city"] for lbl in starts.index] 
     data["account_city"] += [acct.loc[lbl,"account_city"] for lbl in clients]
-
-    data["nodes"] = pd.concat(
-        [
-            starts[params["coord_cols"]+params["info_cols"]],
-            acct[params["coord_cols"]+params["info_cols"]+params["node_cols"]]
-            ]
-        ).fillna(0)
-    for v in params["info_cols"]:
-        data["nodes"][v] = data["nodes"][v].apply(lambda x: x.title() if isinstance(x,str) else "")
-
 
     # Paths from Origin to Destination
     with open(os.path.join(data_path,"travel_path.yml"), 'r') as f:

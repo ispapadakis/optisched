@@ -36,7 +36,6 @@ def plot_region(routes, data, mapfile='weekly_schedule_map.html', output_path='o
     pcolor = priority_color(max_priority)
 
     dropped = data["dropped"]
-    active_clients = data["labels"][data["n_starts"]:]
    
     # Drop Breaks from Routes
     routes = routes.loc[routes["account_id"].apply(lambda x: "Break" not in x)]
@@ -143,19 +142,14 @@ def plot_region(routes, data, mapfile='weekly_schedule_map.html', output_path='o
             )
      
     # Show Remaining
-    nodes_remaining = set(data["nodes"].index) - set(starts) - set(active_clients)
-    if nodes_remaining:
-        coord_remaining = data["nodes"].loc[list(nodes_remaining)]
-        remaining_client_city = coord_remaining["account_city"]
-        latarray = data["latlon"].loc[remaining_client_city,"latitude"]
-        lonarray = data["latlon"].loc[remaining_client_city,"longitude"]
+    if data["inactive_client_city"]:
         fig.add_trace(
             go.Scattergeo(
-                    lat=latarray,
-                    lon=lonarray,
+                    lat=data["latlon"].loc[data["inactive_client_city"],"latitude"],
+                    lon=data["latlon"].loc[data["inactive_client_city"],"longitude"],
                     mode='markers',
                     hoverinfo='text',
-                    text=coord_remaining.account_city,
+                    text=data["inactive_client_city"],
                     marker=dict(size=8,color="white",line=dict(width=1,color='DarkSlateGrey')),
                     name="Client Not in Scope"
                     )

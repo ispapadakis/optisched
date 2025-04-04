@@ -102,8 +102,6 @@ def store_result(data, params, seqs, tstarts, brks):
     info["total_time_hours"] = total_time*params["timeunits2hour"]
     info["total_service_time_hours"] = total_service_time*params["timeunits2hour"]
     info["total_travel_time_hours"] = info["total_time_hours"] - info["total_service_time_hours"]
-    print(dropped_id)
-    print(miss_appt_id)
    
     # Account Stats (exclude starts)
     info["tot_calls"] = 0
@@ -129,26 +127,27 @@ def store_result(data, params, seqs, tstarts, brks):
         d = {
             "account_id":client,
             "call_day":call_day,
-            "priority":data["nodes"]["priority"].loc[client],
+            "priority":data["priority"][pnode],
             "sched_day":"None" if sched_day_id is None else WORKDAY_NAME[sched_day_id],
             "time_from_base":time_from_base,
-            }
+        }
         out.append(d)
     for client in dropped:
         if client in visited:
             continue
         node = labelToNode[client]
-        time_from_base = time_string(data['time_matrix'][0][node]*params["timeunits2minutes"],0)
+        pnode = data["primary"][node]
+        time_from_base = time_string(data['time_matrix'][0][pnode]*params["timeunits2minutes"],0)
         if client in data["time_windows_old"]:
             sched_day_id = data["time_windows_old"][client].day
         else:
             sched_day_id = None
         d = {
-        "account_id":client,
-        "call_day":"Dropped",
-        "priority":data["nodes"]["priority"].loc[client],
-        "sched_day":"None" if sched_day_id is None else WORKDAY_NAME[sched_day_id],
-        "time_from_base":time_from_base,
+            "account_id":client,
+            "call_day":"Dropped",
+            "priority":data["priority"][pnode],
+            "sched_day":"None" if sched_day_id is None else WORKDAY_NAME[sched_day_id],
+            "time_from_base":time_from_base,
         }
         out.append(d)
     statsfile = "output/{}_account_stats.csv".format(params["name"])
@@ -157,7 +156,7 @@ def store_result(data, params, seqs, tstarts, brks):
         ascending=[True,False,True,False]
         ).set_index("account_id").to_csv(statsfile)
     
-    # Calculate Stats
+    # Calculate Model Stats
     info["tot_appointments"] = data["n_appts"]
     info["missed_appointments"] = len(miss_appt_id)
     info["kept_appointments"] = info["tot_appointments"] - info["missed_appointments"]
