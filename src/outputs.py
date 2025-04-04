@@ -5,7 +5,7 @@ import pandas as pd
 
 from src.inputs import primary_node, get_label_to_node, get_node_to_label
 
-WORKDAY_NAME = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+WORKDAY_NAME = ["1.Monday", "2.Tuesday", "3.Wednesday", "4.Thursday", "5.Friday"]
 
 def time_string(total_minutes, start_time=8*60):
     """Convert Minutes to Time String Since Start of Day
@@ -19,11 +19,17 @@ def time_string(total_minutes, start_time=8*60):
     """
     return "{:02d}:{:02d}".format(*divmod(total_minutes + start_time, 60))
 
+def get_default_labels(n_starts, n_clients, n_appts):
+    out = ["Start_{:02d}".format(i) for i in range(n_starts)]
+    out = out + ["Client{:02d}".format(i) for i in range(n_clients)]
+    out = out + ["Appt__{:02d}".format(i) for i in range(n_appts)]
+    return out
+
 def print_sched_sequence(label, appt_start_node, seqs):
-    print("Schedule Plan:")
+    print("\nSchedule Plan:\n")
     for day_id, seq_ in enumerate(seqs):
         print(WORKDAY_NAME[day_id])
-        print("-"*10)
+        print("-"*len(WORKDAY_NAME[day_id]))
         for id in [0]+seq_+[0]:
             lbl = label[id]
             if id >= appt_start_node:
@@ -51,10 +57,11 @@ def store_result(data, params, seqs, tstarts, brks):
    
     Saves File with Account Stats
     """
-    primary = primary_node(data)
+    n_days = len(data["day_lims"])
+    primary = primary_node(**data)
    
     cols = ["account_id","Time In","Time Out","Pre Sched","Day", "day_color"]
-    cmap = plt.get_cmap('Set1',len(data["days"]))
+    cmap = plt.get_cmap('Set1', n_days)
    
     node_label = get_node_to_label(data)
     routes = []
@@ -88,8 +95,8 @@ def store_result(data, params, seqs, tstarts, brks):
 
     total_time = 0
     total_service_time = 0
-    for day_id in data["days"].index:
-        day_name = data["days"].loc[day_id,"day_name"]
+    for day_id in range(n_days):
+        day_name = WORKDAY_NAME[day_id]
         day_color = mcolors.to_hex(cmap(day_id))
         seq_ = seqs[day_id]
         tstart = tstarts[day_id]
@@ -125,8 +132,8 @@ def store_result(data, params, seqs, tstarts, brks):
         info["tot_calls"] += 1
         node = labelToNode[client]
         call_day = row["Day"]
-        if client in data["time_windows"]:
-            sched_day_id = data["time_windows"][client].day
+        if client in data["time_windows_old"]:
+            sched_day_id = data["time_windows_old"][client].day
         else:
             sched_day_id = None
         time_from_base = time_string(data['time_matrix'][0][node]*params["timeunits2minutes"],0)
@@ -134,7 +141,7 @@ def store_result(data, params, seqs, tstarts, brks):
             "account_id":client,
             "call_day":call_day,
             "priority":data["nodes"]["priority"].loc[client],
-            "sched_day":"None" if sched_day_id is None else data["days"].loc[sched_day_id,"day_name"],
+            "sched_day":"None" if sched_day_id is None else WORKDAY_NAME[sched_day_id],
             "time_from_base":time_from_base,
             }
         out.append(d)
@@ -143,15 +150,15 @@ def store_result(data, params, seqs, tstarts, brks):
             continue
         node = labelToNode[client]
         time_from_base = time_string(data['time_matrix'][0][node]*params["timeunits2minutes"],0)
-        if client in data["time_windows"]:
-            sched_day_id = data["time_windows"][client].day
+        if client in data["time_windows_old"]:
+            sched_day_id = data["time_windows_old"][client].day
         else:
             sched_day_id = None
         d = {
         "account_id":client,
         "call_day":"Dropped",
         "priority":data["nodes"]["priority"].loc[client],
-        "sched_day":"None" if sched_day_id is None else data["days"].loc[sched_day_id,"day_name"],
+        "sched_day":"None" if sched_day_id is None else WORKDAY_NAME[sched_day_id],
         "time_from_base":time_from_base,
         }
         out.append(d)

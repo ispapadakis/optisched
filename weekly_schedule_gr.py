@@ -7,12 +7,13 @@ import sys
 def main():
     #sys.stdout = open('output/optisched.txt', 'w') # Send results to file
     data, params = get_model_data()
+
     seqs, tstarts, brks = optmodel(
-        data, 
-        params, 
+        **data,
+        **params, 
         start_from_initial_solution=True, 
         save_solution=False,
-        verbose=False
+        verbose=True
         )
     routes, dropped, miss_appt, info = store_result(data, params, seqs, tstarts, brks)
     print_solution(data, routes, dropped, miss_appt, info)
