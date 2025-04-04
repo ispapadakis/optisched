@@ -1,11 +1,15 @@
-# Description: This file contains the optimization model for the scheduling problem.
+""" Optimize Weekly Schedule of Traveling Salesperson
+    using ORTools
+    Trade off Addressing Needs of Clients with Highest Priority vs Minimizing Travel Time
+    with:
+        - Day Preferences: Start/End Time and Breaks
+        - Soft Constraint on Prior Appointments
+        - Ability to Begin with Initial Solution
+"""
 
 from ortools.constraint_solver import routing_enums_pb2
 from ortools.constraint_solver import pywrapcp
 import sys
-
-from src.outputs import print_sched_sequence, get_default_labels
-from src.inputs import primary_node, get_node_to_label
 
 SOLUTION_STATUS = [
     "Not Solved",
@@ -222,7 +226,7 @@ def optmodel(
             print_sched_sequence(labels, n_starts + n_clients, optimal_seqs)
             print("\nEnd Optimal Solution\n")
         if initial_solution and are_seqs_identical(stored_initial_seqs,optimal_seqs):
-            print("WARNING: Optimal Identical to Initial")  
+            print("WARNING: Optimal Identical to Initial\n")  
         return seqs, tstarts, brks
     else:
         sys.exit("*\n*\n*   No solution found !\n*\n*")
@@ -273,3 +277,22 @@ def read_initial_solution(filename="./initial_solution.txt"):
         for ln in f.readlines():
             routes.append([int(i) for i in ln.split(" ")])
     return routes
+
+def get_default_labels(n_starts, n_clients, n_appts):
+    out = ["Start_{:02d}".format(i) for i in range(n_starts)]
+    out = out + ["Client{:02d}".format(i) for i in range(n_clients)]
+    out = out + ["Appt__{:02d}".format(i) for i in range(n_appts)]
+    return out
+
+def print_sched_sequence(label, appt_start_node, seqs):
+    print("\nSchedule Plan:\n")
+    for day_id, seq_ in enumerate(seqs):
+        print("Day {}".format(day_id+1))
+        print("-----")
+        for id in [0]+seq_+[0]:
+            lbl = label[id]
+            if id >= appt_start_node:
+                print(lbl+" (Prior Appt)")
+            else:
+                print(lbl)
+        print()

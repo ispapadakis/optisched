@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import os
 from math import sqrt
+from src.outputs import WORKDAY_NAME
 
 def priority_color(max_priority, colormap='OrRd', is_scaled=True, correction=0.5):
     # Color by Priority
@@ -12,26 +13,40 @@ def priority_color(max_priority, colormap='OrRd', is_scaled=True, correction=0.5
     else:
         cmap = plt.get_cmap(colormap, int((1+correction)*max_priority))
         return lambda x: mcolors.to_hex(cmap(int(x)))
+    
+def get_day_colors(n_days, colormap='Set1'):
+    out = dict()
+    cmap = plt.get_cmap(colormap, n_days)
+    for day_id in range(n_days):
+        out[WORKDAY_NAME[day_id]] = mcolors.to_hex(cmap(day_id))
+    return out
    
-def plot_region(routes, dropped, data, mapfile='weekly_schedule_map.html', output_path='output'):
+def plot_region(routes, data, mapfile='weekly_schedule_map.html', output_path='output'):
     """Map Daily Routes
 
     Args:
-        routes (pd.DataFrame): Pandas Dataframe with columns: "Day", "day_color", "latitude", "longitude", "account_id", "Time Out"
+        routes (pd.DataFrame): Pandas Dataframe with columns: "Day", "day_color", "latitude", "longitude", "account_id", "Time_Out"
         dropped (list): List of dropped account ids
         data (dict): Dictionary with keys: "coords", "type", "remaining"
         mapfile (str, optional): _description_. Defaults to 'weekly_schedule_map.html'.
     """
     fig = go.Figure()
    
-    max_priority = data["nodes"]["priority"].max()
+    max_priority = max(data["priority"])
     pcolor = priority_color(max_priority)
+
+    dropped = data["dropped"]
+    active_clients = data["labels"][data["n_starts"]:]
    
     # Drop Breaks from Routes
     routes = routes.loc[routes["account_id"].apply(lambda x: "Break" not in x)]
    
     # Show Day Schedules
-    for (day, day_color), grp in routes.groupby(["Day","day_color"]):
+    day_colors = get_day_colors(len(WORKDAY_NAME))
+    for day, grp in routes.groupby("Day"):
+
+        # Pick Day Color
+        day_color = day_colors[day]
 
         # Add the route line
         pth = grp["account_city"].tolist()
@@ -55,18 +70,16 @@ def plot_region(routes, dropped, data, mapfile='weekly_schedule_map.html', outpu
         )
        
         # Show Visited Clients (exluding starts)
-        active_clients = data["ndlabel"][1]
-        coord_visited = grp.loc[grp["account_id"].isin(active_clients)]
+        active_client_id = [i for i in grp["node"].tolist() if i >= data["n_starts"]] 
+        coord_visited = grp.loc[grp["node"].isin(active_client_id)]
         active_client_city = coord_visited["account_city"]
-        latarray = data["latlon"].loc[active_client_city,"latitude"]
-        lonarray = data["latlon"].loc[active_client_city,"longitude"]
         fig.add_trace(
             go.Scattergeo(
-                    lat=latarray,
-                    lon=lonarray,
+                    lat=data["latlon"].loc[active_client_city,"latitude"],
+                    lon=data["latlon"].loc[active_client_city,"longitude"],
                     mode='markers',
                     hoverinfo='text',
-                    text=coord_visited.apply(lambda x: x["account_city"] + ":" + x["account_id"] + " - " + x["Time Out"] + " " + x["Day"], axis=1),
+                    text=coord_visited.apply(lambda x: x["account_city"] + ":" + x["account_id"] + " - " + x["Time_Out"] + " " + x["Day"], axis=1),
                     marker=dict(
                         size=8,
                         symbol='square',
@@ -78,8 +91,9 @@ def plot_region(routes, dropped, data, mapfile='weekly_schedule_map.html', outpu
             )
 
     # Show Starts
-    starts = data["ndlabel"][0]
-    start_city = data["nodes"].loc[starts, 'account_city']
+    start_id = list(range(data["n_starts"]))
+    starts = [data["labels"][i] for i in start_id]
+    start_city = [data["account_city"][i] for i in start_id]
     latarray = data["latlon"].loc[start_city,"latitude"]
     lonarray = data["latlon"].loc[start_city,"longitude"]
     fig.add_trace(
@@ -100,23 +114,28 @@ def plot_region(routes, dropped, data, mapfile='weekly_schedule_map.html', outpu
         )
 
     # Show Dropped
-    if dropped:
-        coord_dropped = data["nodes"].loc[dropped]
-        coord_dropped.sort_values(by="priority", ascending=True, inplace=True)
-        dropped_client_city = coord_dropped["account_city"]
-        latarray = data["latlon"].loc[dropped_client_city,"latitude"]
-        lonarray = data["latlon"].loc[dropped_client_city,"longitude"]
+    if data["dropped_id"]:
+
+        # Sort by Priority
+        dropped_priority = [data["priority"][id] for id in data["dropped_id"]] # Unordered
+        ord = sorted(range(len(dropped_priority)), key=lambda k: dropped_priority[k])
+
+        dropped_id = [data["dropped_id"][i] for i in ord]
+        dropped = [data["labels"][id] for id in dropped_id]
+        dropped_priority = [data["priority"][id] for id in dropped_id]
+        dropped_client_city = [data["account_city"][id] for id in dropped_id]
+        dropped_text = ["{} Priority:{:.1f}".format(lbl,p) for lbl,p in zip(dropped,dropped_priority)]
         fig.add_trace(
             go.Scattergeo(
-                    lat=latarray,
-                    lon=lonarray,
+                    lat=data["latlon"].loc[dropped_client_city,"latitude"],
+                    lon=data["latlon"].loc[dropped_client_city,"longitude"],
                     mode='markers',
                     hoverinfo='text',
-                    text=coord_dropped.reset_index().apply(lambda x: "{} Priority:{:.1f}".format(x["account_id"],x["priority"]), axis=1),
+                    text=dropped_text,
                     marker=dict(
                         size=9,
                         symbol='hexagon',
-                        color=coord_dropped["priority"].apply(pcolor),
+                        color=[pcolor(x) for x in dropped_priority],
                         line=dict(width=1,color='DarkSlateGrey')
                         ),
                     name="Dropped"

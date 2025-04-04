@@ -97,7 +97,8 @@ def create_data_model(params, data_path, priority_cutoff=5):
        
     Returns:
         dict: Dictionary with keys:
-            "nodes", "time_matrix", "time_windows", "days"
+            "nodes", "time_matrix", "time_windows", "day_lims", "break_data", "paths", "latlon", "n_clients", "n_starts", 
+            "inactive_clients", "n_appts", "primary", "labels", "ndlabel"
         """
     # Build Data Dictionary
     data = {}
@@ -180,18 +181,18 @@ def create_data_model(params, data_path, priority_cutoff=5):
         if starts.loc[lbl,"by_air"]:
             data["paths"][base_city][hub_city] = [base_city,hub_city]
             data["paths"][hub_city][base_city] = [hub_city,base_city]
-
+    # Store Travel Time Matrix
     data["time_matrix"] = travel_time # Order: [Starts, Active_Clients]
    
     # Read Day Data: Start/End Time and Break Preferences
-    data["days"] = pd.read_csv(os.path.join(data_path,"days.csv"), index_col=0) # Assumes One Break Per Day
+    day_data = pd.read_csv(os.path.join(data_path,"days.csv"), index_col=0) # Assumes One Break Per Day
 
     # Inputs to Optimization Model: Break Data and Day Limits
     BreakRow = namedtuple("BreakRow", ["start_min", "start_max", "duration", "break_option", "label"])
     DayLims = namedtuple("DayLims", ["start_time_min", "start_time_max", "time_end_max"])
     data["break_data"] = []
     data["day_lims"] = []
-    for day_id, row in data["days"].iterrows():
+    for day_id, row in day_data.iterrows():
         break_label = 'Break for {}'.format(row["day_name"])
         # Set Break Option to False: Break is not optional
         data["break_data"].append(

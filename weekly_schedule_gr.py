@@ -15,9 +15,9 @@ def main():
         save_solution=False,
         verbose=True
         )
-    routes, dropped, miss_appt, info = store_result(data, params, seqs, tstarts, brks)
-    print_solution(data, routes, dropped, miss_appt, info)
-    plot_region(routes, dropped, data, mapfile=params["name"]+"_map.html")
+    routes, info = store_result(data, params, seqs, tstarts, brks)
+    print_solution(routes, info)
+    plot_region(routes, data, mapfile=params["name"]+"_map.html")
 
 if __name__ == "__main__":
     main()
