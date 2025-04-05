@@ -72,21 +72,6 @@ def get_node_to_label(data):
         nodeTolabel += lst
     return nodeTolabel
 
-def get_label_to_node(data):
-    """Label to Primary Node Correspondence
-   
-    Args:
-        data (dict): Dictionary with keys: "ndlabel"
-    """
-    node = 0
-    labelToNode = {}
-    # Appt Nodes are not Repeated
-    for lst in data["ndlabel"][:2]:
-        for lbl in lst:
-            labelToNode[lbl] = node
-            node += 1
-    return labelToNode
-
 def create_data_model(params, data_path, priority_cutoff=5):
     """Data Model for Weekly Scheduling with Breaks
    
