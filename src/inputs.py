@@ -3,16 +3,19 @@ import os
 import pandas as pd
 from geopy import distance
 from collections import namedtuple
+from itertools import chain
 
-def dist2time(x,speed=4.0, high_speed=10.0, high_speed_dist=10, very_high_speed=15.0, very_high_speed_dist=300):
+def dist2time(x, speed=4.0, high_speed=10.0, high_speed_dist=10, very_high_speed=15.0, very_high_speed_dist=300):
     """Convert Distance to Time
     (Time Units are Quarter Hours)
 
     Args:
         x (float): Distance in Miles
-        speed (float, optional): Speed in Miles Per Quarter Hour. Defaults to 5.0.
-        high_speed (float, optional): Speed in Miles Per Quarter Hour for High Speed Roads. Defaults to 20.0.
-        high_speed_dist (float, optional): Distance Threshold for High Speed Roads. Defaults to 20.
+        speed (float, optional): Speed in Miles Per Quarter Hour. Defaults to 4.0.
+        high_speed (float, optional): Speed in Miles Per Quarter Hour for High Speed Roads. Defaults to 10.0.
+        high_speed_dist (float, optional): Distance Threshold for High Speed Roads. Defaults to 10.
+        very_high_speed (float, optional): Speed in Miles Per Quarter Hour for Air Travel. Defaults to 15.0.
+        very_high_speed_dist (float, optional): Distance Threshold for Air Travel. Defaults to 300.
 
     Returns:
         int: Travel Time in Quarter Hours
@@ -48,51 +51,7 @@ def dist_miles(point0,point1):
     """
     return distance.distance(point0,point1).miles
 
-def line_distances(data,params):
-    points = data["nodes"].loc[data["node_label"],params["coord_cols"]].values.tolist()
-    travel_time = [
-        [dist2time(dist_miles(p_from,p_to)) for p_to in points]
-        for p_from in points
-    ]
-    return travel_time
-
-def primary_node(data):
-    """Primary Node Correspondence
-   
-    Args:
-        data (dict): Dictionary with keys: "ndlabel", "time_windows"
-    """
-    N = len(data["ndlabel"][0]) + len(data["ndlabel"][1]) # n_starts + n_clients
-    primary = [i for i in range(N)] + [data["time_windows"][lbl].node for lbl in data["ndlabel"][2]]
-    return primary
-
-def get_node_to_label(data):
-    """Node to Label Correspondence
-   
-    Args:
-        data (dict): Dictionary with keys: "ndlabel"
-    """
-    nodeTolabel = []
-    for lst in data["ndlabel"]:
-        nodeTolabel += lst
-    return nodeTolabel
-
-def get_label_to_node(data):
-    """Label to Primary Node Correspondence
-   
-    Args:
-        data (dict): Dictionary with keys: "ndlabel"
-    """
-    node = 0
-    labelToNode = {}
-    # Appt Nodes are not Repeated
-    for lst in data["ndlabel"][:2]:
-        for lbl in lst:
-            labelToNode[lbl] = node
-            node += 1
-    return labelToNode
-
-def create_data_model(params, data_path, priority_cutoff=5):
+def create_data_model(data_path, priority_cutoff=5):
     """Data Model for Weekly Scheduling with Breaks
    
     Args:
@@ -101,58 +60,68 @@ def create_data_model(params, data_path, priority_cutoff=5):
        
     Returns:
         dict: Dictionary with keys:
-            "nodes", "node_label", "time_matrix", "time_windows", "days"
+            'n_starts', 'inactive_client_city', 'n_clients', 'time_windows', 'n_appts', 
+            'primary', 'labels', 'priority', 'service_time', 'account_city', 
+            'paths', 'time_matrix', 'break_data', 'day_lims', 'latlon'
         """
-    starts = pd.read_csv(os.path.join(data_path,"territory.csv"), index_col=0)
-    acct = pd.read_csv(os.path.join(data_path,"account.csv"), index_col=0)
-   
-    # Select Client Accounts for Optimization
-    clients = acct.loc[acct["priority"] > priority_cutoff].index.tolist()
-   
     # Build Data Dictionary
     data = {}
-    data["nodes"] = pd.concat(
-        [
-            starts[params["coord_cols"]+params["info_cols"]],
-            acct[params["coord_cols"]+params["info_cols"]+params["node_cols"]]
-            ]
-        ).fillna(0)
-    for v in params["info_cols"]:
-        data["nodes"][v] = data["nodes"][v].apply(lambda x: x.title() if isinstance(x,str) else "")
-       
-    # Labels of nodes active in the optimizatin model
-    data["ndlabel"] = [starts.index.tolist(),clients]
-    node_label = get_node_to_label(data)
 
-    # Coordinate Data
-    data["latlon"] = pd.read_csv(os.path.join(data_path,"points.csv"), index_col=1)
+    # Read Starting Location Data
+    starts = pd.read_csv(os.path.join(data_path,"territory.csv"), index_col=0)
+    data["n_starts"] = len(starts)
 
-    # Time Windows
+    # Read Account Data
+    acct = pd.read_csv(os.path.join(data_path,"account.csv"), index_col=0)
+   
+    # Select Client Accounts for Optimization (Low-Priority Clients Are Not Included)
+    clients = []
+    data["inactive_client_city"] = []
+    for lbl in acct.index:
+        if acct.loc[lbl, "priority"] > priority_cutoff:
+            clients.append(lbl)
+        else:
+            data["inactive_client_city"].append(acct.loc[lbl, "account_city"])
+    data["n_clients"] = len(clients)
+
+    # Read Appointment Data: Form Time Windows
     TimeWindow = namedtuple("TimeWindow", ["start", "end", "day", "node"])
     appt = pd.read_csv(os.path.join(data_path,"appointments.csv"), index_col=0)
     appt_client = []
-    data["time_windows"] = dict()
-    node = len(starts)
+    primary = [i for i in range(len(starts)+len(clients))]
+    data["time_windows"] = []
+    primnode = len(starts)
     for client in clients:
         if client in appt.index:
             appt_client.append(client)
-            t = int(appt.loc[client,"time"])
-            data["time_windows"][client] = TimeWindow(t, t, appt.loc[client,"day"], node)
-        node += 1
-    data["ndlabel"].append(appt_client)
- 
+            primary.append(primnode)
+            t = int(appt.loc[client,"time"]) # Assumes client is unique - One Appointment per client
+            data["time_windows"].append(TimeWindow(t, t, appt.loc[client,"day"], primnode))
+        primnode += 1
+    data["n_appts"] = len(data["time_windows"])
+    data["primary"] = primary
+       
+    # Labels of nodes active in the optimization model
+    # Node Order: Starts, Active Clients, Active Clients with Appointments (Repeated)
+    data["labels"] = starts.index.tolist() + clients + appt_client
+
+    # Calculate Primary Node Properties (Numbers Need to be of Type int)
+    data["priority"] = [0] * data["n_starts"] + [int(acct.loc[lbl,"priority"]) for lbl in clients]
+    data["service_time"] = [0] * data["n_starts"] + [int(acct.loc[lbl,"service_time"]) for lbl in clients]
+    data["account_city"] = [starts.loc[lbl,"account_city"] for lbl in starts.index] 
+    data["account_city"] += [acct.loc[lbl,"account_city"] for lbl in clients]
+
     # Paths from Origin to Destination
     with open(os.path.join(data_path,"travel_path.yml"), 'r') as f:
         data["paths"] = yaml.safe_load(f)
   
-    # Travel Time
-    #travel_time = line_distances(data,params)
+    ### Travel Time
+    # Calculate Travel Time Matrix
     with open(os.path.join(data_path,"travel_distance.yml"), 'r') as f:
         tdist = yaml.safe_load(f)
-    points = data["nodes"].loc[node_label,"account_city"].tolist()
     travel_time = [
-        [dist2time(tdist[lbl_from][lbl_to]) for lbl_to in points]
-        for lbl_from in points
+        [dist2time(tdist[city_from][city_to]) for city_to in data["account_city"]]
+        for city_from in data["account_city"]
     ]
     # Implement Hub Shortcuts
     base_city = starts["account_city"][0]
@@ -163,12 +132,30 @@ def create_data_model(params, data_path, priority_cutoff=5):
         if starts.loc[lbl,"by_air"]:
             data["paths"][base_city][hub_city] = [base_city,hub_city]
             data["paths"][hub_city][base_city] = [hub_city,base_city]
-
+    # Store Travel Time Matrix
     data["time_matrix"] = travel_time # Order: [Starts, Active_Clients]
    
-    # Days
-    data["days"] = pd.read_csv(os.path.join(data_path,"days.csv"), index_col=0) # Assumes One Break Per Day
-   
+    # Read Day Data: Start/End Time and Break Preferences
+    day_data = pd.read_csv(os.path.join(data_path,"days.csv"), index_col=0) # Assumes One Break Per Day
+
+    # Inputs to Optimization Model: Break Data and Day Limits
+    BreakRow = namedtuple("BreakRow", ["start_min", "start_max", "duration", "break_option", "label"])
+    DayLims = namedtuple("DayLims", ["start_time_min", "start_time_max", "time_end_max"])
+    data["break_data"] = []
+    data["day_lims"] = []
+    for day_id, row in day_data.iterrows():
+        break_label = 'Break for {}'.format(row["day_name"])
+        # Set Break Option to False: Break is not optional
+        data["break_data"].append(
+            BreakRow(int(row["break_time_min"]),int(row["break_time_max"]),int(row["duration"]),False,break_label)
+            )
+        data["day_lims"].append(
+            DayLims(int(row["start_time_min"]), int(row["start_time_max"]), int(row["time_end_max"]))
+            )
+
+    # Read Coordinate Data: Used for Plotting Maps
+    data["latlon"] = pd.read_csv(os.path.join(data_path,"points.csv"), index_col=1)
+
     return data
 
 def get_model_data(config_path="config", data_path="Data"):
@@ -181,7 +168,7 @@ def get_model_data(config_path="config", data_path="Data"):
     model_data_path = os.path.join(data_path,params["path"])
        
     # Instantiate the data problem.
-    data = create_data_model(params, model_data_path)
+    data = create_data_model(model_data_path)
    
     return data, params
 
@@ -195,9 +182,9 @@ def main():
             print("...")
         elif k == "paths":
             print("...")
-        elif k == "time_windows":
-            for tk in list(v.keys())[:3]:
-                print(tk, v[tk])
+        elif type(v) is list:
+            for tk in v[:3]:
+                print(tk)
             print("...")
         else:
             print(v)

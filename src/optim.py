@@ -1,11 +1,15 @@
-# Description: This file contains the optimization model for the scheduling problem.
+""" Optimize Weekly Schedule of Traveling Salesperson
+    using ORTools
+    Trade off Addressing Needs of Clients with Highest Priority vs Minimizing Travel Time
+    with:
+        - Day Preferences: Start/End Time and Breaks
+        - Soft Constraint on Prior Appointments
+        - Ability to Begin with Initial Solution
+"""
 
 from ortools.constraint_solver import routing_enums_pb2
 from ortools.constraint_solver import pywrapcp
 import sys
-
-from src.outputs import store_result, print_solution
-from src.inputs import primary_node, get_node_to_label
 
 SOLUTION_STATUS = [
     "Not Solved",
@@ -19,7 +23,28 @@ SOLUTION_STATUS = [
 
 TIME_DIM_NAME = "Time"
 
-def optmodel(data, params, start_from_initial_solution=True, save_solution=False):
+def optmodel(
+        n_starts, 
+        n_clients, 
+        n_appts,
+        primary,
+        priority,
+        service_time,
+        time_windows,
+        time_matrix,
+        break_data,
+        day_lims,
+        allow_waiting_time=4,
+        max_time_units_per_day=52,
+        global_span_cost=1,
+        miss_appointment_penalty=1,
+        run_time_limit=2,
+        labels = None,
+        start_from_initial_solution=True, 
+        save_solution=False, 
+        verbose=True,
+        **kwargs
+        ):
     """Based on ORTools Vehicles Routing Problem (VRP) with Time Windows.
     Implements:
         - Client Priority
@@ -27,29 +52,44 @@ def optmodel(data, params, start_from_initial_solution=True, save_solution=False
         - Day Breaks
         - Forces Appointments on Day and Time
         - Permits Missing Appointment with Penalty
+        - Accepts Initial Solution
        
     Args:
-        data (dict): Dictionary with keys: "time_matrix", "time_windows", "days", "node_label"
-        params (dict): Dictionary
-        start_from_initial_solution (bool): Read initial solution from file. Defaults to True.
-        save_solution (bool): save optimal solution as future initial solution. Defualts to False.
+        n_starts (int): Number of Start Locations (Base, Hotels)
+        n_clients (int): Number of Client Locations
+        n_appts (int): Number of Clients with Appointments (Subset of All Client Locations)
+        primary (list): Appointment to Client Mapping
+        priority (list): List of client priorities
+        service_time (list): List of service times for each node
+        time_windows (list): List of time windows for each node
+        time_matrix (list): List of travel times between nodes
+        break_data (list): List of breaks for each node
+        day_lims (list): List of day limits for each node
+        labels (list, optional): List of node labels. Defaults to None.
+        allow_waiting_time (int, optional): See Routing Manual. Defaults to 4.
+        max_time_units_per_day (int, optional): See Routing Manual. Defaults to 52.
+        global_span_cost (int, optional): See Routing Manual. Defaults to 1.
+        miss_appointment_penalty (int, optional): See Routing Manual. Defaults to 1.
+        run_time_limit (int, optional): See Routing Manual. Defaults to 2.
+        start_from_initial_solution (bool, optional): Read initial solution from file. Defaults to True.
+        save_solution (bool, optional): save optimal solution as future initial solution. Defaults to False.
+        verbose (bool, optional): show raw results. Defaults to True.
        
     Returns:
-        tuple: Tuple of DataFrames with keys: "routes", "dropped"
+        seqs (list): List of routes
+        tstarts (list): List of start times for each route
+        brks (list): List of breaks for each route
     """
 
-    # Node Order : Starts, Active Clients, Client with Appointments (Repeated)
-    n_starts, n_clients, n_appts = tuple(len(lst) for lst in data["ndlabel"])
-   
-    ### Node Correspondence
-    # Node to Primary Node: includes map of Appointments to Clients
-    primary = primary_node(data)
-    # Node to Label
-    nodeTolabel = get_node_to_label(data)
+    if labels is None:
+        labels = get_default_labels(n_starts, n_clients, n_appts)
+
+    # Infer Number of Days: day_lims is not optional
+    n_days = len(day_lims)
    
     # Create the routing index manager.
     manager = pywrapcp.RoutingIndexManager(
-        n_starts + n_clients + n_appts, len(data["days"]), 0
+        n_starts + n_clients + n_appts, n_days, 0
     ) # The last argument is the base node index
 
     # Create Routing Model.
@@ -62,9 +102,8 @@ def optmodel(data, params, start_from_initial_solution=True, save_solution=False
         # Convert from routing variable Index to time matrix NodeIndex.
         from_node = primary[manager.IndexToNode(from_index)]
         to_node   = primary[manager.IndexToNode(to_index)]
-        travel_time = data['time_matrix'][from_node][to_node]
-        service_time = data["nodes"]['service_time'].iloc[from_node]
-        return int(travel_time + service_time)
+        travel_time = time_matrix[from_node][to_node]
+        return int(service_time[from_node] + travel_time) # Service From Node Then Travel
 
     transit_callback_index = routing.RegisterTransitCallback(time_callback)
     # [END transit_callback]
@@ -74,106 +113,71 @@ def optmodel(data, params, start_from_initial_solution=True, save_solution=False
     routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
     # [END arc_cost]
 
-    # Add Time Windows constraint.
+    #[START time window constraints]
+    # Used for Appointments, Day Limits and Breaks
+
+    # Add Time Dimension.
     routing.AddDimension(
         transit_callback_index,
-        params["allow_waiting_time"],      # allow waiting time
-        params["max_time_units_per_day"],  # maximum time per day [this limit is tightened by day limit later]
+        allow_waiting_time,      # allow waiting time
+        max_time_units_per_day,  # maximum time per day [this limit is tightened by day limit later]
         False,  # Don't force start cumul to zero.
         TIME_DIM_NAME,
     )
     time_dimension = routing.GetDimensionOrDie(TIME_DIM_NAME)
-    time_dimension.SetGlobalSpanCostCoefficient(params["global_span_cost"])
+    time_dimension.SetGlobalSpanCostCoefficient(global_span_cost)
    
     # Add time window constraints for existing appointments.
     node = n_starts + n_clients
-    for lbl in data["ndlabel"][2]:
-        twin = data["time_windows"][lbl]
+    for twin in time_windows:
         index = manager.NodeToIndex(node)
         time_dimension.CumulVar(index).SetRange(twin.start, twin.end)
         node += 1
-    # Add time window constraints for each day start node.
-    for d in data["days"].index:
-        index = routing.Start(d)
-        time_dimension.CumulVar(index).SetRange(
-            int(data["days"].loc[d,"start_time_min"]), int(data["days"].loc[d,"start_time_max"])
-        )
 
-    # Add route-end time constraints.
-    for d, day_lim in data["days"]["time_end_max"].items():
-        routing.solver().Add(time_dimension.CumulVar(routing.End(d)) <= day_lim)
+    # Add time window constraints for each day.
+    for d, dlim in enumerate(day_lims):
+        # Day Start Limits
+        time_dimension.CumulVar(routing.Start(d)).SetRange(dlim.start_time_min, dlim.start_time_max)
+        # Day End Limits
+        routing.solver().Add(time_dimension.CumulVar(routing.End(d)) <= dlim.time_end_max)
 
-    # Breaks
-    # [START break_constraint]
+    # Add time window constraints for day breaks.
     # warning: Need a pre-travel array using the solver's index order.
-    node_visit_transit = [0 for _ in range(routing.Size())]
-    for index in range(routing.Size()):
-        node = manager.IndexToNode(index)
-        lbl = nodeTolabel[node]
-        node_visit_transit[index] = int(data["nodes"]['service_time'].loc[lbl])
-
-    break_intervals = {}
-    for d in data["days"].index:
-        start_min = int(data["days"].loc[d,"break_time_min"])
-        start_max = int(data["days"].loc[d,"break_time_max"])
-        duration = int(data["days"].loc[d,"duration"])
-        break_intervals[d] = [
-            routing.solver().FixedDurationIntervalVar(
-                start_min,  # start min
-                start_max,  # start max
-                duration,  # duration
-                False,  # optional: no
-                f'Break for day {d}')
+    # use: service_time data.
+    node_visit_transit = [
+        service_time[primary[manager.IndexToNode(index)]]
+        for index in range(routing.Size())
         ]
+    # Create break intervals
+    for d, bdat in enumerate(break_data):
+        # Breaks are defined as [start_min, start_max, duration, break_option, label]
         time_dimension.SetBreakIntervalsOfVehicle(
-            break_intervals[d],  # breaks
+            [routing.solver().FixedDurationIntervalVar(*bdat)],  # breaks
             d,  # day index
             node_visit_transit
             )
-    # [END break_constraint]
+    # [END time window constraints]
 
     # Clien Priority
     node = 0
-    # Starts
-    for lbl in data["ndlabel"][0]:
-        priority = int(data["nodes"].loc[lbl, "priority"])
+    # Starts and Active Clients
+    for _ in range(n_starts+ n_clients):
         node_id = manager.NodeToIndex(node)
-        routing.AddDisjunction([node_id], priority)
-        node += 1
-    # Primary
-    for lbl in data["ndlabel"][1]:
-        priority = int(data["nodes"].loc[lbl, "priority"])
-        node_id = manager.NodeToIndex(node)
-        routing.AddDisjunction([node_id], priority)
+        routing.AddDisjunction([node_id], priority[node])
         node += 1
     # Appointments
-    for lbl in data["ndlabel"][2]:
-        priority = int(data["nodes"].loc[lbl, "priority"])
+    for a, twin in enumerate(time_windows):
         node_id = manager.NodeToIndex(node)
-        pid = manager.NodeToIndex(primary[node])
-        twin = data["time_windows"][lbl]
+        pid = manager.NodeToIndex(twin.node) # Index of corresponding active client
         routing.SetAllowedVehiclesForIndex([twin.day], node_id)
-        routing.AddDisjunction([node_id, pid], 2*priority, 1) # 2*priority to force max_cardinality = 1
-        routing.AddDisjunction([node_id], priority + params["miss_appointment_penalty"])
+        routing.AddDisjunction([node_id, pid], 2*priority[twin.node], 1) # 2*priority to force max_cardinality = 1
+        routing.AddDisjunction([node_id], priority[twin.node] + miss_appointment_penalty)
         node += 1
 
     # Instantiate route start and end times to produce feasible times.
-    for d in data["days"].index:
+    for d in range(n_days):
         routing.AddVariableMinimizedByFinalizer(time_dimension.CumulVar(routing.Start(d)))
         routing.AddVariableMinimizedByFinalizer(time_dimension.CumulVar(routing.End(d)))
-
-    # Check if Initial Solution is Available
-    initial_solution = None
-    if start_from_initial_solution:
-        try:
-            stored_initial_solution = read_initial_solution()
-            initial_solution = routing.ReadAssignmentFromRoutes(stored_initial_solution, True)
-            print("Initial Solution:")
-            routes, dropped, miss_appt, info = store_result(data, manager, routing, initial_solution, params)
-            print_solution(initial_solution, data, routes, dropped, miss_appt, info)
-            print("\nEnd Initial Solution\n")
-        except FileNotFoundError:
-            print("No Initial Solution")
 
     # Setting first solution heuristic.
     search_parameters = pywrapcp.DefaultRoutingSearchParameters()
@@ -181,12 +185,29 @@ def optmodel(data, params, start_from_initial_solution=True, save_solution=False
         routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
     )
     search_parameters.local_search_metaheuristic = (
-        routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH
+        routing_enums_pb2.LocalSearchMetaheuristic.TABU_SEARCH # Only option deviating from local minima
         )
-    search_parameters.time_limit.FromSeconds(params["run_time_limit"])
+    search_parameters.time_limit.FromSeconds(run_time_limit)
+    # When an initial solution is given for search, the model will be closed with
+    # the default search parameters unless it is explicitly closed with the custom
+    # search parameters.
+    routing.CloseModelWithParameters(search_parameters)
+
+    # Check if Initial Solution is Available
+    initial_solution = None
+    if start_from_initial_solution:
+        try:
+            stored_initial_seqs = read_initial_solution()
+            initial_solution = routing.ReadAssignmentFromRoutes(stored_initial_seqs, True)
+        except FileNotFoundError:
+            print("No Initial Solution")
 
     # Solve the problem.
     if initial_solution:
+        if verbose:
+            print("Initial Solution:")
+            print_sched_sequence(labels, n_starts + n_clients, stored_initial_seqs)
+            print("\nEnd Initial Solution\n")
         solution = routing.SolveFromAssignmentWithParameters(initial_solution, search_parameters)
     else:
         solution = routing.SolveWithParameters(search_parameters)
@@ -194,18 +215,30 @@ def optmodel(data, params, start_from_initial_solution=True, save_solution=False
     # Print solution on console.
     if solution:
         print("Optimization Finished: ",SOLUTION_STATUS[routing.status()])
+        print(f"Optimal Objective Value: {solution.ObjectiveValue():,d}")
         seqs, tstarts, brks = read_solution(solution, manager, routing)
-        print(seqs)
-        print(tstarts)
-        print(brks)
         # Save Current Solution: Could Work as Initial Solution of Next Run
         if save_solution:
             save_solution_sequence(seqs)
-        routes, dropped, miss_appt, info = store_result(data, manager, routing, solution, params)
-        print_solution(solution, data, routes, dropped, miss_appt, info)
-        return routes, dropped
+        optimal_seqs = [seq_[1:-1] for seq_ in seqs]
+        if initial_solution and are_seqs_identical(stored_initial_seqs,optimal_seqs):
+            print("WARNING: Optimal Identical to Initial\n")  
+        if verbose:
+            print("\nOptimal Solution:")
+            print_sched_sequence(labels, n_starts + n_clients, optimal_seqs)
+            print("\nEnd Optimal Solution\n")
+        return seqs, tstarts, brks
     else:
         sys.exit("*\n*\n*   No solution found !\n*\n*")
+
+def are_seqs_identical(seq0, seq1):
+    test = True
+    for s0, s1 in zip(seq0,seq1):
+        test &= len(s0) == len(s1)
+        test &= all(x0==x1 for x0,x1 in zip(s0,s1))
+        if not test:
+            break
+    return test
 
 def read_solution(solution, manager, routing):
     routes = []
@@ -245,3 +278,21 @@ def read_initial_solution(filename="./initial_solution.txt"):
             routes.append([int(i) for i in ln.split(" ")])
     return routes
 
+def get_default_labels(n_starts, n_clients, n_appts):
+    out = ["Start_{:02d}".format(i) for i in range(n_starts)]
+    out = out + ["Client{:02d}".format(i) for i in range(n_clients)]
+    out = out + ["Appt__{:02d}".format(i) for i in range(n_appts)]
+    return out
+
+def print_sched_sequence(label, appt_start_node, seqs):
+    print("\nSchedule Plan:\n")
+    for day_id, seq_ in enumerate(seqs):
+        print("Day {}".format(day_id+1))
+        print("-----")
+        for id in [0]+seq_+[0]:
+            lbl = label[id]
+            if id >= appt_start_node:
+                print(lbl+" (Prior Appt)")
+            else:
+                print(lbl)
+        print()
