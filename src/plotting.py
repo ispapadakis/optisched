@@ -34,8 +34,6 @@ def plot_region(routes, data, mapfile='weekly_schedule_map.html', output_path='o
    
     max_priority = max(data["priority"])
     pcolor = priority_color(max_priority)
-
-    dropped = data["dropped"]
    
     # Drop Breaks from Routes
     routes = routes.loc[routes["account_id"].apply(lambda x: "Break" not in x)]

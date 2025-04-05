@@ -110,7 +110,7 @@ def create_data_model(params, data_path, priority_cutoff=5):
     # Read Account Data
     acct = pd.read_csv(os.path.join(data_path,"account.csv"), index_col=0)
    
-    # Select Client Accounts for Optimization
+    # Select Client Accounts for Optimization (Low-Priority Clients Are Not Included)
     clients = []
     data["inactive_client_city"] = []
     for lbl in acct.index:

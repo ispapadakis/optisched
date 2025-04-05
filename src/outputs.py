@@ -164,7 +164,6 @@ def store_result(data, params, seqs, tstarts, brks):
     info["dropped_appointments"] = len(miss_appt_id & dropped_id)
 
     # Store for Plotting
-    data["dropped"] = list(dropped) # Store Dropped Accounts as List
     data["dropped_id"] = list(dropped_id) # Store Dropped Ids as List
     data["miss_appt_id"] = list(miss_appt_id) # Store Ids with Missed Appointments as List
 
