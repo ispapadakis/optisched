@@ -1,7 +1,7 @@
 Optimization Finished:  Success
 Optimal Objective Value: 308
-                              account_id     account_city  Pre Sched
-Day         Time In Time Out                                        
+                              account_id     account_city  Pre_Sched
+Day         Time_In Time_Out                                        
 1.Monday    09:00   09:00           base           Athens          0
             09:15   10:00        CID-033       Nea Smyrni          0
             10:15   11:00        CID-001           Tavros          0
@@ -23,13 +23,13 @@ Day         Time In Time Out
             16:15   17:00        CID-031  Agios Dimitrios          0
             17:15   17:15           base           Athens          0
 3.Wednesday 09:00   09:00           base           Athens          0
-            09:30   10:15        CID-009            Pefki          0
-            10:30   11:15        CID-020          Kifisia          0
-            12:00   12:45        CID-005        Nea Makri          0
+            09:15   10:00        CID-023          Vyronas          0
+            10:30   11:15        CID-010         Artemida          0
+            12:00   12:45        CID-008           Koropi          0
             12:45   13:15     Break-Time                -          1
-            13:45   14:30        CID-010         Artemida          0
-            15:00   15:45        CID-008           Koropi          0
-            16:15   17:00        CID-023          Vyronas          0
+            13:45   14:30        CID-005        Nea Makri          0
+            15:00   15:45        CID-020          Kifisia          0
+            16:00   16:45        CID-009            Pefki          0
             17:15   17:15           base           Athens          0
 4.Thursday  09:00   09:00           base           Athens          0
                     09:00         hotel2            Patra          0
@@ -40,12 +40,12 @@ Day         Time In Time Out
             17:15   17:15           base           Athens          0
 5.Friday    09:00   09:00           base           Athens          0
                     09:00         hub1as     Thessaloniki          0
-            09:15   10:00        CID-060      Stavroupoli          0
+            09:45   10:30        CID-054      Alexandreia          0
             11:15   12:00        CID-058           Edessa          0
             12:00   12:30     Break-Time                -          1
             13:00   13:45        CID-059        Giannitsa          1
-            14:15   15:00        CID-054      Alexandreia          0
-            15:45   16:30        CID-053         Efkarpia          0
+            14:45   15:30        CID-053         Efkarpia          0
+            15:45   16:30        CID-060      Stavroupoli          0
             16:45   16:45         hub1ae     Thessaloniki          0
                     16:45           base           Athens          0
 
