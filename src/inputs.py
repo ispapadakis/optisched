@@ -51,28 +51,7 @@ def dist_miles(point0,point1):
     """
     return distance.distance(point0,point1).miles
 
-def primary_node(n_starts,n_clients,time_windows,**kwargs):
-    """Primary Node Correspondence
-   
-    Args:
-        data (dict): Dictionary with keys: "ndlabel", "time_windows"
-    """
-    N = n_starts + n_clients
-    primary = [i for i in range(N)] + [twin.node for twin in time_windows]
-    return primary
-
-def get_node_to_label(data):
-    """Node to Label Correspondence
-   
-    Args:
-        data (dict): Dictionary with keys: "ndlabel"
-    """
-    nodeTolabel = []
-    for lst in data["ndlabel"]:
-        nodeTolabel += lst
-    return nodeTolabel
-
-def create_data_model(params, data_path, priority_cutoff=5):
+def create_data_model(data_path, priority_cutoff=5):
     """Data Model for Weekly Scheduling with Breaks
    
     Args:
@@ -81,8 +60,9 @@ def create_data_model(params, data_path, priority_cutoff=5):
        
     Returns:
         dict: Dictionary with keys:
-            "nodes", "time_matrix", "time_windows", "day_lims", "break_data", "paths", "latlon", "n_clients", "n_starts", 
-            "inactive_clients", "n_appts", "primary", "labels", "ndlabel"
+            'n_starts', 'inactive_client_city', 'n_clients', 'time_windows', 'n_appts', 
+            'primary', 'labels', 'priority', 'service_time', 'account_city', 
+            'paths', 'time_matrix', 'break_data', 'day_lims', 'latlon'
         """
     # Build Data Dictionary
     data = {}
@@ -121,10 +101,9 @@ def create_data_model(params, data_path, priority_cutoff=5):
     data["n_appts"] = len(data["time_windows"])
     data["primary"] = primary
        
-    # Labels of nodes active in the optimization model in order
+    # Labels of nodes active in the optimization model
     # Node Order: Starts, Active Clients, Active Clients with Appointments (Repeated)
-    data["ndlabel"] = [starts.index.tolist(),clients,appt_client]
-    data["labels"] = list(chain(*data["ndlabel"]))
+    data["labels"] = starts.index.tolist() + clients + appt_client
 
     # Calculate Primary Node Properties (Numbers Need to be of Type int)
     data["priority"] = [0] * data["n_starts"] + [int(acct.loc[lbl,"priority"]) for lbl in clients]
@@ -189,7 +168,7 @@ def get_model_data(config_path="config", data_path="Data"):
     model_data_path = os.path.join(data_path,params["path"])
        
     # Instantiate the data problem.
-    data = create_data_model(params, model_data_path)
+    data = create_data_model(model_data_path)
    
     return data, params
 

@@ -32,6 +32,7 @@ def plot_region(routes, data, mapfile='weekly_schedule_map.html', output_path='o
     """
     fig = go.Figure()
    
+    # Color Parameters
     max_priority = max(data["priority"])
     pcolor = priority_color(max_priority)
    
@@ -40,6 +41,7 @@ def plot_region(routes, data, mapfile='weekly_schedule_map.html', output_path='o
    
     # Show Day Schedules
     day_colors = get_day_colors(len(WORKDAY_NAME))
+    start_labels = data["labels"][:data["n_starts"]]
     for day, grp in routes.groupby("Day"):
 
         # Pick Day Color
@@ -47,8 +49,11 @@ def plot_region(routes, data, mapfile='weekly_schedule_map.html', output_path='o
 
         # Add the route line
         pth = grp["account_city"].tolist()
-        if grp["account_id"][1] in data["ndlabel"][0]: # do not show base to hub path
+        grpacct = grp["account_id"].tolist()
+        if grpacct[1] in start_labels: # do not show base to hub path
             pth.pop(0)
+        if len(grpacct) >= 2 and grpacct[-2] in start_labels: # do not show hub to base path
+            pth.pop()
         rprev = pth.pop(0)
         rdet = [rprev]
         for rnext in pth:
