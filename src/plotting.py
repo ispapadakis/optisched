@@ -116,16 +116,16 @@ def plot_region(routes, data, mapfile='weekly_schedule_map.html', output_path='o
         )
 
     # Show Dropped
-    if data["dropped_id"]:
+    if data["dropped_node"]:
 
         # Sort by Priority
-        dropped_priority = [data["priority"][id] for id in data["dropped_id"]] # Unordered
+        dropped_priority = [data["priority"][id] for id in data["dropped_node"]] # Unordered
         ord = sorted(range(len(dropped_priority)), key=lambda k: dropped_priority[k])
 
-        dropped_id = [data["dropped_id"][i] for i in ord]
-        dropped = [data["labels"][id] for id in dropped_id]
-        dropped_priority = [data["priority"][id] for id in dropped_id]
-        dropped_client_city = [data["account_city"][id] for id in dropped_id]
+        dropped_node = [data["dropped_node"][i] for i in ord]
+        dropped = [data["labels"][id] for id in dropped_node]
+        dropped_priority = [data["priority"][id] for id in dropped_node]
+        dropped_client_city = [data["account_city"][id] for id in dropped_node]
         dropped_text = ["{} Priority:{:.1f}".format(lbl,p) for lbl,p in zip(dropped,dropped_priority)]
         fig.add_trace(
             go.Scattergeo(

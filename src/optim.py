@@ -58,7 +58,7 @@ def optmodel(
         n_starts (int): Number of Start Locations (Base, Hotels)
         n_clients (int): Number of Client Locations
         n_appts (int): Number of Clients with Appointments (Subset of All Client Locations)
-        primary (list): List of node indices in order of optimization
+        primary (list): Appointment to Client Mapping
         priority (list): List of client priorities
         service_time (list): List of service times for each node
         time_windows (list): List of time windows for each node

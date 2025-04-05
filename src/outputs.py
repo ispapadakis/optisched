@@ -45,23 +45,23 @@ def store_result(data, params, seqs, tstarts, brks):
     ### Initialize Collectors
     routes = []
     info = dict()
-    primary_id = list(range(data["n_starts"],data["n_starts"]+data["n_clients"])) # store for later
-    dropped_id = set(primary_id)
-    miss_appt_id = set([twin.node for twin in data["time_windows"]])
+    primary_nodes = list(range(data["n_starts"],data["n_starts"]+data["n_clients"])) # store for later
+    dropped_node = set(primary_nodes)
+    miss_appt_node = set([twin.node for twin in data["time_windows"]])
 
     ### Row Operations
 
     def get_stop_data(id, ts):
-        nonlocal dropped_id, miss_appt_id, total_service_time
+        nonlocal dropped_node, miss_appt_node, total_service_time
         pid = data["primary"][id]
         lbl = data["labels"][id]
         priority = data["priority"][pid]
         account_city = data["account_city"][pid]
         total_service_time += data["service_time"][pid]
-        dropped_id -= {pid}
+        dropped_node -= {pid}
         pre_sched = 0
         if id > pid:
-            miss_appt_id -= {pid}
+            miss_appt_node -= {pid}
             pre_sched = 1
         t_in  = ts*params["timeunits2minutes"]
         t_out = (ts+int(data['service_time'][pid]))*params["timeunits2minutes"]
@@ -92,7 +92,7 @@ def store_result(data, params, seqs, tstarts, brks):
             "sched_day":"None", 
             "time_from_base":time_from_base(node)
         } 
-        for node in primary_id
+        for node in primary_nodes
         ]
     for twin in data["time_windows"]:
         acctstats[twin.node]["sched_day"] = WORKDAY_NAME[twin.day]
@@ -131,14 +131,13 @@ def store_result(data, params, seqs, tstarts, brks):
     
     # Calculate Model Stats
     info["tot_appointments"] = data["n_appts"]
-    info["missed_appointments"] = len(miss_appt_id)
+    info["missed_appointments"] = len(miss_appt_node)
     info["kept_appointments"] = info["tot_appointments"] - info["missed_appointments"]
-    info["rescheduled_appointments"] = len(miss_appt_id - dropped_id)
-    info["dropped_appointments"] = len(miss_appt_id & dropped_id)
+    info["rescheduled_appointments"] = len(miss_appt_node - dropped_node)
+    info["dropped_appointments"] = len(miss_appt_node & dropped_node)
 
     # Store for Plotting
-    data["dropped_id"] = list(dropped_id) # Store Dropped Ids as List
-    data["miss_appt_id"] = list(miss_appt_id) # Store Ids with Missed Appointments as List
+    data["dropped_node"] = list(dropped_node) # Store Dropped Primary Nodes as List
 
     return routes, info
 
