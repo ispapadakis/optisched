@@ -5,7 +5,7 @@ from src.optim import optmodel
 import sys
 
 def main():
-    #sys.stdout = open('output/optisched.txt', 'w') # Send results to file
+    sys.stdout = open('output/optisched.txt', 'w') # Send results to file
     data, params = get_model_data()
 
     seqs, tstarts, brks = optmodel(
