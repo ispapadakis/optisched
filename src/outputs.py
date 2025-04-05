@@ -43,26 +43,25 @@ def store_result(data, params, seqs, tstarts, brks):
             ]
         )
    
+    ### Initialize Collectors
     routes = []
     info = dict()
-    dropped = set(data["ndlabel"][1])
-    n_primary = data["n_starts"]+data["n_clients"]
-    dropped_id = set(range(data["n_starts"],n_primary))
-    miss_appt = set(data["ndlabel"][2])
+    primary_id = list(range(data["n_starts"],data["n_starts"]+data["n_clients"])) # store for later
+    dropped_id = set(primary_id)
     miss_appt_id = set([twin.node for twin in data["time_windows"]])
-   
-    def get_stop_data(id, ts, dropped, miss_appt):
+
+    ### Row Operations
+
+    def get_stop_data(id, ts):
         nonlocal dropped_id, miss_appt_id, total_service_time
         pid = data["primary"][id]
         lbl = data["labels"][id]
         priority = data["priority"][pid]
         account_city = data["account_city"][pid]
         total_service_time += data["service_time"][pid]
-        dropped -= {lbl}
         dropped_id -= {pid}
         pre_sched = 0
         if id > pid:
-            miss_appt -= {lbl}
             miss_appt_id -= {pid}
             pre_sched = 1
         t_in  = ts*params["timeunits2minutes"]
@@ -83,17 +82,38 @@ def store_result(data, params, seqs, tstarts, brks):
             break_row = ("Break-Skip", -1, "20:00", "20:30", 1, day_name, None, "-")
         return break_row
 
+    ### Initialize Account Stats
+    time_from_base = lambda i: time_string(data['time_matrix'][0][i]*params["timeunits2minutes"],0)
+    acctstats = [None] * data["n_starts"]
+    acctstats += [
+        {
+            "account_id":data["labels"][node], 
+            "call_day":"Dropped", 
+            "priority":data["priority"][node], 
+            "sched_day":"None", 
+            "time_from_base":time_from_base(node)
+        } 
+        for node in primary_id
+        ]
+    for twin in data["time_windows"]:
+        acctstats[twin.node]["sched_day"] = WORKDAY_NAME[twin.day]
+
+    ### Traverse Routes to Collect Route Data and Account Stats
     total_time = 0
     total_service_time = 0
+    info["tot_calls"] = 0
     for day_id in range(n_days):
         day_name = WORKDAY_NAME[day_id]
         seq_ = seqs[day_id]
         tstart = tstarts[day_id]
         brk = brks[day_id]
         day_data = []
-        for id, ts in zip(seq_,tstart):
-            row = get_stop_data(id, ts, dropped, miss_appt)
-            day_data.append(row)
+        for node, ts in zip(seq_,tstart):
+            if node >= data["n_starts"]:
+                info["tot_calls"] += 1
+                pnode = data["primary"][node]
+                acctstats[pnode]["call_day"] = day_name
+            day_data.append(get_stop_data(node, ts))
         total_time += ts # Time of Day's Route End (Note: ts == te for Base)
         day_data.append(get_break_row(brk))
         routes.append(pd.DataFrame(day_data, columns=RouteRow._fields))
@@ -103,55 +123,9 @@ def store_result(data, params, seqs, tstarts, brks):
     info["total_service_time_hours"] = total_service_time*params["timeunits2hour"]
     info["total_travel_time_hours"] = info["total_time_hours"] - info["total_service_time_hours"]
    
-    # Account Stats (exclude starts)
-    info["tot_calls"] = 0
-    out = []
-    labelToNode = get_label_to_node(data)
-    visited = set()
-    for _, row in routes.iterrows():
-        client = row["account_id"]
-        node = int(row["node"])
-        pnode = data["primary"][node]
-        if "Break" in client:
-            continue
-        if client in data["ndlabel"][0]:
-            continue
-        visited.add(client)
-        info["tot_calls"] += 1
-        call_day = row["Day"]
-        if client in data["time_windows_old"]:
-            sched_day_id = data["time_windows_old"][client].day
-        else:
-            sched_day_id = None
-        time_from_base = time_string(data['time_matrix'][0][pnode]*params["timeunits2minutes"],0)
-        d = {
-            "account_id":client,
-            "call_day":call_day,
-            "priority":data["priority"][pnode],
-            "sched_day":"None" if sched_day_id is None else WORKDAY_NAME[sched_day_id],
-            "time_from_base":time_from_base,
-        }
-        out.append(d)
-    for client in dropped:
-        if client in visited:
-            continue
-        node = labelToNode[client]
-        pnode = data["primary"][node]
-        time_from_base = time_string(data['time_matrix'][0][pnode]*params["timeunits2minutes"],0)
-        if client in data["time_windows_old"]:
-            sched_day_id = data["time_windows_old"][client].day
-        else:
-            sched_day_id = None
-        d = {
-            "account_id":client,
-            "call_day":"Dropped",
-            "priority":data["priority"][pnode],
-            "sched_day":"None" if sched_day_id is None else WORKDAY_NAME[sched_day_id],
-            "time_from_base":time_from_base,
-        }
-        out.append(d)
+    # Save Account Stats
     statsfile = "output/{}_account_stats.csv".format(params["name"])
-    pd.DataFrame(out).sort_values(
+    pd.DataFrame(acctstats[data["n_starts"]:]).sort_values(
         by=["call_day","priority","sched_day","time_from_base"],
         ascending=[True,False,True,False]
         ).set_index("account_id").to_csv(statsfile)

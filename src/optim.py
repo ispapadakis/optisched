@@ -220,13 +220,13 @@ def optmodel(
         # Save Current Solution: Could Work as Initial Solution of Next Run
         if save_solution:
             save_solution_sequence(seqs)
-        if verbose:
-            print("\nOptimal Solution:")
-            optimal_seqs = [seq_[1:-1] for seq_ in seqs]
-            print_sched_sequence(labels, n_starts + n_clients, optimal_seqs)
-            print("\nEnd Optimal Solution\n")
+        optimal_seqs = [seq_[1:-1] for seq_ in seqs]
         if initial_solution and are_seqs_identical(stored_initial_seqs,optimal_seqs):
             print("WARNING: Optimal Identical to Initial\n")  
+        if verbose:
+            print("\nOptimal Solution:")
+            print_sched_sequence(labels, n_starts + n_clients, optimal_seqs)
+            print("\nEnd Optimal Solution\n")
         return seqs, tstarts, brks
     else:
         sys.exit("*\n*\n*   No solution found !\n*\n*")

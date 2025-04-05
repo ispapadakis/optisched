@@ -13,7 +13,7 @@ def main():
         **params, 
         start_from_initial_solution=True, 
         save_solution=False,
-        verbose=True
+        verbose=False
         )
     routes, info = store_result(data, params, seqs, tstarts, brks)
     print_solution(routes, info)

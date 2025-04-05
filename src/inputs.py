@@ -51,7 +51,6 @@ def dist_miles(point0,point1):
     """
     return distance.distance(point0,point1).miles
 
-
 def primary_node(n_starts,n_clients,time_windows,**kwargs):
     """Primary Node Correspondence
    
@@ -125,7 +124,6 @@ def create_data_model(params, data_path, priority_cutoff=5):
     appt = pd.read_csv(os.path.join(data_path,"appointments.csv"), index_col=0)
     appt_client = []
     primary = [i for i in range(len(starts)+len(clients))]
-    data["time_windows_old"] = dict()
     data["time_windows"] = []
     primnode = len(starts)
     for client in clients:
@@ -133,7 +131,6 @@ def create_data_model(params, data_path, priority_cutoff=5):
             appt_client.append(client)
             primary.append(primnode)
             t = int(appt.loc[client,"time"]) # Assumes client is unique - One Appointment per client
-            data["time_windows_old"][client] = TimeWindow(t, t, appt.loc[client,"day"], primnode)
             data["time_windows"].append(TimeWindow(t, t, appt.loc[client,"day"], primnode))
         primnode += 1
     data["n_appts"] = len(data["time_windows"])
