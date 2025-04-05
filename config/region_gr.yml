@@ -3,14 +3,6 @@ name: RegionGR
 
 # Input Parameters
 path: region_gr
-coord_cols:
- - latitude
- - longitude
-info_cols:
- - account_city
-node_cols:
- - priority
- - service_time
 data_date: 2024-11-20
 
 # Time Parameters
