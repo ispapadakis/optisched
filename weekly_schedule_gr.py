@@ -2,11 +2,13 @@ from src.inputs import get_model_data
 from src.outputs import print_solution, store_result
 from src.plotting import plot_region
 from src.optim import optmodel
-import sys
 
 def main():
-    #sys.stdout = open('output/optisched.txt', 'w') # Send results to file
-    data, params = get_model_data()
+    data, params = get_model_data("region_gr_S1")
+
+    ### To begin new model
+    # Set start_from_initial_solution=False
+    # Set save_solution=True
 
     seqs, tstarts, brks = optmodel(
         **data,
@@ -16,7 +18,7 @@ def main():
         verbose=False
         )
     routes, info = store_result(data, params, seqs, tstarts, brks)
-    print_solution(routes, info)
+    print_solution(routes, info, send_to_file=True)
     plot_region(routes, data, mapfile=params["name"]+"_map.html")
 
 if __name__ == "__main__":

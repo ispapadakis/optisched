@@ -33,6 +33,16 @@ Schedule weekly client calls to a) maximize the priority of in-schedule clients,
 
 **Output**:
 
-- [Weekly Schedule](output/optisched.txt)
+- [Weekly Schedule](output/optisched_RegionGR.txt)
 - [Map of Daily Routes](http://htmlpreview.github.io/?https://github.com/ispapadakis/optisched/blob/main/output/RegionGR_map.html)
 - [Optimal Plan Stats by Client](output/RegionGR_account_stats.csv)
+
+## Sensitivity Analysis
+
+### Scenario 1: Lower Penalty for Missing Appointments
+
+Result: A) Less Travel Time and B) Not Missing Client with Prior Appointment (by rescheduling)
+
+- [Weekly Schedule](output/optisched_RegionGR_S1.txt)
+- [Map of Daily Routes](http://htmlpreview.github.io/?https://github.com/ispapadakis/optisched/blob/main/output/RegionGR_S1_map.html)
+- [Optimal Plan Stats by Client](output/RegionGR_S1_account_stats.csv)

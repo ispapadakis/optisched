@@ -170,7 +170,9 @@ def optmodel(
         node_id = manager.NodeToIndex(node)
         pid = manager.NodeToIndex(twin.node) # Index of corresponding active client
         routing.SetAllowedVehiclesForIndex([twin.day], node_id)
-        routing.AddDisjunction([node_id, pid], 2*priority[twin.node], 1) # 2*priority to force max_cardinality = 1
+        cardinality_penalty = 2*priority[twin.node]+miss_appointment_penalty+1 # force max_cardinality = 1
+        routing.AddDisjunction([node_id, pid], cardinality_penalty, 1) 
+        routing.AddDisjunction([node_id], priority[twin.node] + miss_appointment_penalty)
         node += 1
 
     # Instantiate route start and end times to produce feasible times.
