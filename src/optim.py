@@ -335,7 +335,7 @@ def main():
     ]
     time_between = lambda x0, y0, x1, y1: int(0.25*(abs(x0-x1)+abs(y0-y1)))+1
     case["time_matrix"] = [
-        [int(0.25*(abs(pfrom[0]-pto[0])+abs(pfrom[1]-pto[1])))+1 for pto in loc]
+        [time_between(*pfrom,*pto) for pto in loc]
         for pfrom in loc
     ]
     case["time_matrix"][0][1] = 0
