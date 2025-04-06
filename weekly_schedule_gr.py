@@ -2,11 +2,13 @@ from src.inputs import get_model_data
 from src.outputs import print_solution, store_result
 from src.plotting import plot_region
 from src.optim import optmodel
-import sys
 
 def main():
-    #sys.stdout = open('output/optisched.txt', 'w') # Send results to file
     data, params = get_model_data()
+
+    ### To begin new model
+    # Set start_from_initial_solution=False
+    # Set save_solution=True
 
     seqs, tstarts, brks = optmodel(
         **data,

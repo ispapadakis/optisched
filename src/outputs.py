@@ -1,4 +1,5 @@
 import pandas as pd
+import sys
 
 from collections import namedtuple
 
@@ -141,21 +142,43 @@ def store_result(data, params, seqs, tstarts, brks):
 
     return routes, info
 
-def print_solution(routes, info):  
-    """Print Solution to Console
+def print_solution(routes, info, send_to_file=False):  
+    """Print the solution summary to the specified output.
+    Args:
+        routes (pd.DataFrame): DataFrame with route information
+        info (dict): Dictionary with solution information
+        send_to_file (bool): Flag to send output to file or stdout
     """
+    # Select output destination
+    if send_to_file:
+        fout = open(get_report_filename(**info), "w")
+    else:
+        fout = sys.stdout
+
     print(routes.set_index(["Day","Time_In","Time_Out"])[["account_id", "account_city", "Pre_Sched"]])
    
-    print("\nSchedule Summary")
-    print("----------------")
-    print("Total Work Time:    {total_time_hours:.1f} hours".format(**info))
-    print("Total Travel Time:  {total_travel_time_hours:.1f} hours".format(**info))
-    print("Total Service Time: {total_service_time_hours:.1f} hours".format(**info))
-    print("Total Client Calls: {}".format(info["tot_calls"]))
+    print("\nSchedule Summary", file=fout)
+    print("----------------", file=fout)
+    print("Total Work Time:    {total_time_hours:.1f} hours".format(**info), file=fout)
+    print("Total Travel Time:  {total_travel_time_hours:.1f} hours".format(**info), file=fout)
+    print("Total Service Time: {total_service_time_hours:.1f} hours".format(**info), file=fout)
+    print("Total Client Calls: {}".format(info["tot_calls"]), file=fout)
    
-    print("\nAppointment Stats")
-    print("  Total Appointments:       {tot_appointments:d}".format(**info))
-    print("  Appointments Kept:        {kept_appointments:d}".format(**info))
-    print("  Missed Appointments:      {missed_appointments:d}".format(**info))
-    print("  Rescheduled Appointments: {rescheduled_appointments:d}".format(**info))
-    print("  Dropped Appointments:     {dropped_appointments:d}".format(**info))
+    print("\nAppointment Stats", file=fout)
+    print("  Total Appointments:       {tot_appointments:d}".format(**info), file=fout)
+    print("  Appointments Kept:        {kept_appointments:d}".format(**info), file=fout)
+    print("  Missed Appointments:      {missed_appointments:d}".format(**info), file=fout)
+    print("  Rescheduled Appointments: {rescheduled_appointments:d}".format(**info), file=fout)
+    print("  Dropped Appointments:     {dropped_appointments:d}".format(**info), file=fout)
+
+def get_report_filename(name, **kwargs):
+    """Get Report Filename
+   
+    Args:
+        name (str): Name of the file
+        kwargs: Additional arguments
+   
+    Returns:
+        str: Filename with Path
+    """
+    return "output/optisched_{}.txt".format(name)
