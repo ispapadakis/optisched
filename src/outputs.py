@@ -140,6 +140,9 @@ def store_result(data, params, seqs, tstarts, brks):
     # Store for Plotting
     data["dropped_node"] = list(dropped_node) # Store Dropped Primary Nodes as List
 
+    # Set Report Destination Filename
+    info["name"] = params["name"]
+
     return routes, info
 
 def print_solution(routes, info, send_to_file=False):  
@@ -155,10 +158,14 @@ def print_solution(routes, info, send_to_file=False):
     else:
         fout = sys.stdout
 
-    print(routes.set_index(["Day","Time_In","Time_Out"])[["account_id", "account_city", "Pre_Sched"]])
+    print("OPTIMAL SCHEDULE (Model {name:})\n".format(**info), file=fout)
+
+    print(
+        routes.set_index(["Day","Time_In","Time_Out"])[["account_id", "account_city", "Pre_Sched"]], 
+        file=fout
+        )
    
-    print("\nSchedule Summary", file=fout)
-    print("----------------", file=fout)
+    print("\nPerformance Metrics", file=fout)
     print("Total Work Time:    {total_time_hours:.1f} hours".format(**info), file=fout)
     print("Total Travel Time:  {total_travel_time_hours:.1f} hours".format(**info), file=fout)
     print("Total Service Time: {total_service_time_hours:.1f} hours".format(**info), file=fout)

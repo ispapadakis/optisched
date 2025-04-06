@@ -18,7 +18,7 @@ def main():
         verbose=False
         )
     routes, info = store_result(data, params, seqs, tstarts, brks)
-    print_solution(routes, info)
+    print_solution(routes, info, send_to_file=True)
     plot_region(routes, data, mapfile=params["name"]+"_map.html")
 
 if __name__ == "__main__":
