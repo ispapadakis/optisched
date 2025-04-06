@@ -9,6 +9,7 @@
 
 from ortools.constraint_solver import routing_enums_pb2
 from ortools.constraint_solver import pywrapcp
+from collections import namedtuple
 import sys
 
 SOLUTION_STATUS = [
@@ -297,3 +298,78 @@ def print_sched_sequence(label, appt_start_node, seqs):
             else:
                 print(lbl)
         print()
+
+def main():
+    """Main function runs a simple test case."""
+    # Assume 1 Time Unit = 1 Hour
+    TimeWindow = namedtuple("TimeWindow", ["start", "end", "day", "node"])
+    DayLims = namedtuple("DayLims", ["start_time_min", "start_time_max", "time_end_max"])
+    case = {}
+    # Start Data
+    case["n_starts"] = 3 # Base and 1 Hub (1: In Point, 2: Out Point)
+    # Client Data
+    case["n_clients"] = 15
+    case["priority"] = [0]*case["n_starts"] + [9]*case["n_clients"]
+    case["service_time"] = [0]*case["n_starts"] + [1]*case["n_clients"]
+
+    # Location Data
+    loc = [
+        [3,2],
+        [6,8],
+        [6,8],
+        [1,1],
+        [4,9],
+        [7,1],
+        [2,3],
+        [6,3],
+        [9,3],
+        [3,4],
+        [5,4],
+        [2,5],
+        [8,5],
+        [4,7],
+        [6,7],
+        [2,8],
+        [3,1],
+        [8,9],
+    ]
+    time_between = lambda x0, y0, x1, y1: int(0.25*(abs(x0-x1)+abs(y0-y1)))+1
+    case["time_matrix"] = [
+        [int(0.25*(abs(pfrom[0]-pto[0])+abs(pfrom[1]-pto[1])))+1 for pto in loc]
+        for pfrom in loc
+    ]
+    case["time_matrix"][0][1] = 0
+    case["time_matrix"][2][0] = 0
+
+    # Appointments
+    N = case["n_starts"] + case["n_clients"]
+    case["n_appts"] = 2
+    case["primary"] = list(range(N)) + [N - 1, N - 2]
+    case["time_windows"] = [
+        TimeWindow(3, 3, 2, N-1), # Appointment 1 - Day 2
+        TimeWindow(2, 2, 0, N-2), # Appointment 2 - Day 0
+    ]
+    # Day Data - 3 Days Only
+    case["break_data"] = [
+        (3, 5 , 1, False, "Break for Day 0"), # Day 0
+        (3, 5 , 2, False, "Break for Day 1"), # Day 1
+        (3, 5 , 1, False, "Break for Day 2"), # Day 2
+        (3, 5 , 1, False, "Break for Day 3"), # Day 3
+        (3, 5 , 1, False, "Break for Day 4"), # Day 4
+    ]
+    case["day_lims"] = [
+        DayLims(0, 1, 9), # Begin Time 0 or 1 End Time 8
+        DayLims(0, 1, 9), # Begin Time 0 or 1 End Time 9
+        DayLims(0, 1, 9), # Begin Time 0 or 1 End Time 8
+        DayLims(0, 1, 8), # Begin Time 0 or 1 End Time 8
+        DayLims(0, 1, 8), # Begin Time 0 or 1 End Time 8
+    ]
+    
+    optmodel(
+        **case,
+        run_time_limit=60,
+        start_from_initial_solution=False,
+        )
+
+if __name__ == "__main__":
+    main()

@@ -3,7 +3,6 @@ import os
 import pandas as pd
 from geopy import distance
 from collections import namedtuple
-from itertools import chain
 
 def dist2time(x, speed=4.0, high_speed=10.0, high_speed_dist=10, very_high_speed=15.0, very_high_speed_dist=300):
     """Convert Distance to Time
@@ -85,7 +84,6 @@ def create_data_model(data_path, priority_cutoff=5):
     data["n_clients"] = len(clients)
 
     # Read Appointment Data: Form Time Windows
-    TimeWindow = namedtuple("TimeWindow", ["start", "end", "day", "node"])
     appt = pd.read_csv(os.path.join(data_path,"appointments.csv"), index_col=0)
     appt_client = []
     primary = [i for i in range(len(starts)+len(clients))]
