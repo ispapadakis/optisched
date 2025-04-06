@@ -4,7 +4,7 @@ from src.plotting import plot_region
 from src.optim import optmodel
 
 def main():
-    data, params = get_model_data()
+    data, params = get_model_data("region_gr_S1")
 
     ### To begin new model
     # Set start_from_initial_solution=False

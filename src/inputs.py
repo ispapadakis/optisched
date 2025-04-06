@@ -158,10 +158,10 @@ def create_data_model(data_path, priority_cutoff=5):
 
     return data
 
-def get_model_data(config_path="config", data_path="Data"):
+def get_model_data(fname="region_gr", config_path="config", data_path="Data"):
    
     # Load Example Parameters
-    with open(os.path.join(config_path,"region_gr.yml"))as f:
+    with open(os.path.join(config_path,fname+".yml"))as f:
         params = yaml.load(f, Loader=yaml.FullLoader)
        
     # Data Path
