@@ -21,9 +21,11 @@ def dist2time(x, speed=4.0, high_speed=10.0, high_speed_dist=10, very_high_speed
        
     Example:
     >>> dist2time(10)
-    3
-    >>> dist2time(30)
-    6
+    2
+    >>> dist2time(20)
+    4
+    >>> dist2time(100)
+    20
     """
     if x < 1e-6:
         return 0
